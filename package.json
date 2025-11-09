@@ -1,6 +1,6 @@
 {
 	"type": "module",
-	"name": "FK_Jinyan_Liu_Kurs3_202511",
+	"name": "FK_JL_Kurs3_202511",
 	"version": "1.0.0",
 	"description": "Försäkringskassan AI Assistant - OpenAI and Langchain solutions",
 	"main": "server.js",

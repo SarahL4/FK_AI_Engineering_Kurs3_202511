@@ -99,7 +99,7 @@ Vad är reglerna för föräldraledighet?
 ## 🏗️ Project Structure
 
 ```
-FK_Jinyan_Liu_Kurs3_202511/
+FK_JL_Kurs3_202511/
 ├── scripts/
 │   └── init-vector-store.js       # Vector Store initialization script
 ├── src/
@@ -451,7 +451,7 @@ ISC
 
 ## 👤 Author
 
-Jinyan Liu - Kurs 3 - 2025/11
+JL - Kurs 3 - 2025/11
 
 ---
 
