@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Försäkringskassan AI助手</title>
+		<title>Försäkringskassan AI Assistant - Comparison</title>
 		<script src="https://cdn.tailwindcss.com"></script>
 		<link rel="stylesheet" href="/css/custom.css" />
 		<script>
@@ -76,340 +76,255 @@
 		</style>
 	</head>
 	<body class="bg-gray-50 min-h-screen">
-		<!-- Hero Section with Cover Image -->
+		<!-- Header -->
 		<div
-			class="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-800 overflow-hidden"
+			class="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-800"
 		>
-			<!-- Background Pattern -->
-			<div class="absolute inset-0 opacity-10">
-				<div
-					class="absolute inset-0"
-					style="
-						background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
-					"
-				></div>
-			</div>
-
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
-				<div class="grid md:grid-cols-2 gap-8 items-center">
-					<!-- Left: Text Content -->
-					<div class="text-white space-y-6">
-						<h1 class="text-4xl md:text-5xl font-bold leading-tight">
-							Försäkringskassan<br />
-							<span class="text-green-200">AI Assistant</span>
-						</h1>
-						<p class="text-xl text-green-100 leading-relaxed">
-							Smart Q&A System for föräldrarpenning and barn
-						</p>
-					</div>
-
-					<!-- Right: Cover Image -->
-					<div class="relative flex justify-center md:justify-end">
-						<div
-							class="relative rounded-2xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-300 max-w-sm"
-						>
-							<img
-								src="/assets/cover image.png"
-								alt="Försäkringskassan AI Assistant Cover"
-								class="w-full h-auto"
-								loading="lazy"
-							/>
-							<div
-								class="absolute inset-0 bg-gradient-to-t from-green-900/50 to-transparent"
-							></div>
-						</div>
-						<!-- Floating Stats -->
-						<div
-							class="absolute -bottom-4 -left-4 bg-white rounded-xl shadow-xl p-4 transform hover:scale-105 transition-transform"
-						>
-							<div class="flex items-center gap-3">
-								<div class="bg-green-100 rounded-full p-3">
-									<svg
-										class="w-6 h-6 text-green-600"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
-									</svg>
-								</div>
-								<div>
-									<p class="text-xs text-gray-500">Status</p>
-									<p
-										class="text-sm font-bold text-gray-900"
-										id="heroVectorStatus"
-									>
-										Ready
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+				<div class="text-center text-white space-y-3">
+					<h1 class="text-4xl md:text-5xl font-bold">
+						Försäkringskassan AI Assistant
+					</h1>
+					<p class="text-lg md:text-xl text-green-100">
+						About parental leave, child allowance, VAB and insurance
+					</p>
 				</div>
 			</div>
 		</div>
 
-		<!-- 主要内容区域 -->
-		<main
-			class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-8 relative z-10"
-		>
-			<!-- Status Card - Compact -->
+		<!-- Main Content -->
+		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<!-- Query Input Section -->
 			<div
-				class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3"
+				class="mb-6 bg-white rounded-xl shadow-lg border border-gray-200 p-6"
 			>
-				<div
-					class="flex flex-wrap items-center justify-center md:justify-between gap-3 text-xs text-gray-600"
-				>
-					<div class="flex items-center gap-2">
-						<span class="text-gray-500">Model:</span>
-						<span class="font-medium text-gray-900">gpt-4o-mini</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<span class="text-gray-500">Document:</span>
-						<span class="font-medium text-gray-900">FK.pdf</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<span class="text-gray-500">Status:</span>
-						<span class="font-medium text-gray-900" id="vectorStoreStatus"
-							>Loading...</span
-						>
-					</div>
-				</div>
-			</div>
-
-			<!-- Query Section -->
-			<div
-				class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-			>
-				<!-- Section Header -->
-				<div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-4">
-					<div class="flex items-center justify-between">
-						<div>
-							<h2 class="text-xl font-bold text-white flex items-center gap-2">
-								<svg
-									class="w-6 h-6"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-									></path>
-								</svg>
-								Ask Your Question
-							</h2>
-							<p class="text-blue-100 text-sm mt-1">
-								OpenAI Responses API + Built-in Web Search
-							</p>
-						</div>
-						<div
-							class="hidden sm:flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full"
-						>
-							<div
-								class="w-2 h-2 bg-green-400 rounded-full animate-pulse"
-							></div>
-							<span class="text-white text-xs font-medium">Live</span>
-						</div>
-					</div>
+				<div class="mb-4">
+					<label class="block text-sm font-semibold text-gray-700 mb-3">
+						💬 Your Question
+					</label>
+					<textarea
+						id="queryInput"
+						rows="4"
+						placeholder="Example: Hur många dagar med föräldrapenning kan man få?"
+						class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 resize-none"
+					></textarea>
+					<p class="text-xs text-gray-500 mt-2">
+						Questions about föräldrarpenning and barn
+					</p>
 				</div>
 
-				<!-- Query Input -->
-				<div class="p-6">
-					<div class="mb-4">
-						<label
-							class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
-						>
-							<span class="text-lg">💬</span>
-							Your Question
-						</label>
-						<div class="relative">
-							<textarea
-								id="queryInput"
-								rows="4"
-								placeholder="Example: Hur många dagar med föräldrapenning kan man få?"
-								class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 resize-none"
-							></textarea>
-							<div class="absolute bottom-3 right-3 text-xs text-gray-400">
-								Press Ctrl+Enter to submit
-							</div>
-						</div>
-						<p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
-							<svg
-								class="w-4 h-4"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-								></path>
-							</svg>
-							Questions about föräldrarpenning and barn
-						</p>
-					</div>
-
-					<!-- Submit Button -->
+				<!-- Submit Buttons -->
+				<div class="flex flex-col sm:flex-row gap-3">
 					<button
-						id="submitBtn"
-						class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+						id="submitBtn1"
+						class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
 					>
-						<svg
-							class="w-5 h-5"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-							></path>
-						</svg>
-						Submit Question & Search
+						🤖 Query Solution 1 (OpenAI)
+					</button>
+					<button
+						id="submitBtn2"
+						class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+					>
+						🎯 Query Solution 2 (Langchain)
+					</button>
+					<button
+						id="submitBtnBoth"
+						class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+					>
+						🚀 Query Both (Compare)
 					</button>
 				</div>
+			</div>
 
-				<!-- Results Section -->
-				<div
-					id="resultsContainer"
-					class="hidden p-6 bg-gray-50 border-t border-gray-200"
-				>
-					<div class="grid md:grid-cols-2 gap-6">
-						<!-- File Search Results -->
+			<!-- Results Grid -->
+			<div class="grid md:grid-cols-2 gap-6">
+				<!-- Solution 1 Results -->
+				<div id="solution1Container" class="hidden space-y-4">
+					<h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+						<span class="text-blue-600">⬅</span> Solution 1: OpenAI
+					</h2>
+
+					<!-- File Search Results -->
+					<div
+						id="fileSearchBlock1"
+						class="hidden bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
+					>
+						<div class="bg-gradient-to-r from-blue-600 to-cyan-700 px-4 py-3">
+							<h3 class="text-sm font-semibold text-white">
+								📄 File Search Result
+							</h3>
+						</div>
 						<div
-							class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+							id="fileAnswer1"
+							class="p-4 min-h-[300px] max-h-[500px] overflow-y-auto text-sm"
+						></div>
+					</div>
+
+					<!-- Web Search Results -->
+					<div
+						id="webSearchBlock1"
+						class="hidden bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
+					>
+						<div
+							class="bg-gradient-to-r from-green-600 to-emerald-700 px-4 py-3"
 						>
-							<div class="bg-gradient-to-r from-blue-600 to-cyan-700 px-3 py-2">
-								<h3
-									class="text-sm font-medium text-white flex items-center gap-2"
+							<h3 class="text-sm font-semibold text-white">
+								🌐 Web Search Result
+							</h3>
+						</div>
+						<div
+							id="webAnswer1"
+							class="p-4 min-h-[300px] max-h-[500px] overflow-y-auto text-sm"
+						></div>
+					</div>
+
+					<!-- Token Usage -->
+					<div
+						id="tokenUsage1"
+						class="hidden bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200"
+					>
+						<h4 class="text-sm font-semibold text-purple-900 mb-2">
+							📊 Token Usage
+						</h4>
+						<div class="grid grid-cols-3 gap-2 text-xs">
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Input</p>
+								<p
+									id="inputTokens1"
+									class="font-bold text-purple-900 font-mono"
 								>
-									<svg
-										class="w-4 h-4"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-										></path>
-									</svg>
-									File Search Result
-								</h3>
+									-
+								</p>
 							</div>
-							<div
-								id="fileAnswer"
-								class="p-4 min-h-[200px] max-h-[400px] overflow-y-auto"
-							>
-								<div
-									class="flex items-center justify-center gap-2 text-gray-500 h-full"
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Output</p>
+								<p
+									id="outputTokens1"
+									class="font-bold text-purple-900 font-mono"
 								>
-									<div class="loading-spinner"></div>
-									<span>Waiting for query...</span>
-								</div>
+									-
+								</p>
+							</div>
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Cost</p>
+								<p id="cost1" class="font-bold text-purple-900 font-mono">-</p>
 							</div>
 						</div>
+					</div>
+				</div>
 
-						<!-- Web Search Results -->
+				<!-- Solution 2 Results -->
+				<div id="solution2Container" class="hidden space-y-4">
+					<h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+						<span class="text-green-600">➡</span> Solution 2: Langchain
+					</h2>
+
+					<!-- File Search + LLM Result -->
+					<div
+						id="fileSearchBlock2"
+						class="hidden bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
+					>
+						<div class="bg-gradient-to-r from-blue-600 to-cyan-700 px-4 py-3">
+							<h3
+								class="text-sm font-semibold text-white flex items-center gap-2"
+							>
+								📄 File Search + LLM Result
+								<span
+									id="modelBadge2"
+									class="text-xs bg-white/20 px-2 py-0.5 rounded-full"
+								></span>
+							</h3>
+						</div>
 						<div
-							class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+							id="fileAnswer2"
+							class="p-4 min-h-[300px] max-h-[500px] overflow-y-auto text-sm"
+						></div>
+					</div>
+
+					<!-- Web Search Result (Top Result) -->
+					<div
+						id="webSearchBlock2"
+						class="hidden bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
+					>
+						<div
+							class="bg-gradient-to-r from-green-600 to-emerald-700 px-4 py-3"
 						>
-							<div
-								class="bg-gradient-to-r from-green-600 to-emerald-700 px-3 py-2"
-							>
-								<h3
-									class="text-sm font-medium text-white flex items-center gap-2"
+							<h3 class="text-sm font-semibold text-white">
+								🌐 Web Search Result (Highest Score)
+							</h3>
+						</div>
+						<div
+							id="webAnswer2"
+							class="p-4 min-h-[300px] max-h-[500px] overflow-y-auto text-sm"
+						></div>
+					</div>
+
+					<!-- Token Usage (LLM) -->
+					<div
+						id="tokenUsage2"
+						class="hidden bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200"
+					>
+						<h4 class="text-sm font-semibold text-purple-900 mb-2">
+							📊 Token Usage (LLM)
+						</h4>
+						<div class="grid grid-cols-3 gap-2 text-xs">
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Input</p>
+								<p
+									id="inputTokens2"
+									class="font-bold text-purple-900 font-mono"
 								>
-									<svg
-										class="w-4 h-4"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-										></path>
-									</svg>
-									Web Search Result
-								</h3>
+									-
+								</p>
 							</div>
-							<div
-								id="webAnswer"
-								class="p-4 min-h-[200px] max-h-[400px] overflow-y-auto"
-							>
-								<div
-									class="flex items-center justify-center gap-2 text-gray-500 h-full"
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Output</p>
+								<p
+									id="outputTokens2"
+									class="font-bold text-purple-900 font-mono"
 								>
-									<div class="loading-spinner"></div>
-									<span>Waiting for query...</span>
-								</div>
+									-
+								</p>
+							</div>
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Cost</p>
+								<p id="cost2" class="font-bold text-purple-900 font-mono">-</p>
 							</div>
 						</div>
 					</div>
 
-					<!-- Token Usage Statistics -->
+					<!-- Token Usage (Embeddings) -->
 					<div
-						class="mt-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-200"
+						id="embeddingUsage2"
+						class="hidden bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-200"
 					>
-						<h4
-							class="text-sm font-medium text-purple-900 mb-2 flex items-center gap-2"
-						>
-							<svg
-								class="w-4 h-4"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-								></path>
-							</svg>
-							Token Usage Statistics
+						<h4 class="text-sm font-semibold text-orange-900 mb-2">
+							📊 Token Usage (Embeddings)
 						</h4>
-						<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-							<div class="bg-white rounded-lg p-3 shadow-sm">
-								<p class="text-xs text-gray-500 mb-1">Input Tokens</p>
+						<div class="grid grid-cols-3 gap-2 text-xs">
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Model</p>
 								<p
-									id="inputTokens"
-									class="text-base font-semibold text-purple-900 font-mono"
+									id="embeddingModel2"
+									class="font-bold text-orange-900 text-[10px]"
 								>
 									-
 								</p>
 							</div>
-							<div class="bg-white rounded-lg p-3 shadow-sm">
-								<p class="text-xs text-gray-500 mb-1">Output Tokens</p>
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Tokens</p>
 								<p
-									id="outputTokens"
-									class="text-base font-semibold text-purple-900 font-mono"
+									id="embeddingTokens2"
+									class="font-bold text-orange-900 font-mono"
 								>
 									-
 								</p>
 							</div>
-							<div class="bg-white rounded-lg p-3 shadow-sm">
-								<p class="text-xs text-gray-500 mb-1">Estimated Cost</p>
+							<div class="bg-white rounded p-2">
+								<p class="text-gray-500">Cost</p>
 								<p
-									id="estimatedCost"
-									class="text-base font-semibold text-purple-900 font-mono"
+									id="embeddingCostValue2"
+									class="font-bold text-orange-900 font-mono"
 								>
 									-
 								</p>
@@ -419,59 +334,57 @@
 				</div>
 			</div>
 
-			<!-- Conversation History -->
-			<div id="historyContainer" class="hidden mt-8">
-				<div
-					class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-				>
-					<div
-						class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between"
-					>
-						<h3
-							class="text-lg font-semibold text-white flex items-center gap-2"
-						>
-							<svg
-								class="w-5 h-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-								></path>
-							</svg>
-							Conversation History
+			<!-- Status Bar -->
+			<div
+				class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+			>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+					<div>
+						<h3 class="font-semibold text-gray-900 mb-2">
+							Solution 1 Status (OpenAI)
 						</h3>
-						<button
-							id="clearHistoryBtn"
-							class="text-sm text-red-300 hover:text-red-100 font-medium px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all flex items-center gap-2"
-						>
-							<svg
-								class="w-4 h-4"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-								></path>
-							</svg>
-							Clear History
-						</button>
+						<div class="space-y-1 text-gray-600">
+							<div class="flex items-center gap-2">
+								<span>Vector Store:</span>
+								<span id="vectorStoreStatus1" class="font-medium text-green-600"
+									>✅ Ready (1 files)</span
+								>
+							</div>
+							<div class="flex items-center gap-2">
+								<span>Model:</span>
+								<span class="font-medium text-blue-600">gpt-4o-mini</span>
+							</div>
+						</div>
 					</div>
-					<div
-						id="historyList"
-						class="p-6 max-h-[500px] overflow-y-auto bg-gray-50"
-					>
-						<p class="text-gray-500 text-center text-sm py-8">
-							No conversation history yet
-						</p>
+					<div>
+						<h3 class="font-semibold text-gray-900 mb-2">
+							Solution 2 Status (Langchain)
+						</h3>
+						<div class="space-y-1 text-gray-600">
+							<div class="flex items-center gap-2">
+								<span>PDF:</span>
+								<span id="pdfStatus2" class="font-medium text-green-600"
+									>Ready</span
+								>
+							</div>
+							<div class="flex items-center gap-2">
+								<span>Model:</span>
+								<span id="solution2Model" class="font-medium text-green-600"
+									>gemini-2.0-flash-exp</span
+								>
+							</div>
+							<div class="flex items-center gap-2">
+								<span>Free LLM:</span>
+								<span id="freeLLMCount" class="font-medium text-green-600"
+									>1 calls</span
+								>
+								<span class="text-gray-400">|</span>
+								<span>Paid LLM:</span>
+								<span id="paidLLMCount" class="font-medium text-orange-600"
+									>0 calls</span
+								>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -496,7 +409,7 @@
 		</div>
 
 		<!-- Footer -->
-		<footer class="bg-gradient-to-r from-green-800 to-emerald-900 mt-16">
+		<footer class="bg-gradient-to-r from-green-800 to-emerald-900 mt-0">
 			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				<div
 					class="flex flex-col md:flex-row justify-between items-center gap-4"
@@ -505,7 +418,9 @@
 						<p class="text-white font-semibold mb-1">
 							Försäkringskassan AI Assistant
 						</p>
-						<p class="text-gray-400 text-sm">Smart Q&A System</p>
+						<p class="text-gray-400 text-sm">
+							Ask about parental leave, child allowance, VAB and insurance
+						</p>
 					</div>
 					<div class="flex gap-4 text-sm text-gray-400">
 						<div class="flex items-center gap-2">
