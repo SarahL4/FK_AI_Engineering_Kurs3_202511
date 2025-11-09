@@ -1,2 +1,30 @@
-# Environment files
+# Dependencies
+node_modules/
+
+# Environment variables
 .env
+.env.local
+
+# Documents
+docs/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Upload files
+uploads/*
+!uploads/.gitkeep
+
+# Build files
+dist/
+build/

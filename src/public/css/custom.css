@@ -1,0 +1,171 @@
+/* 自定义样式 - 补充 Tailwind CSS */
+
+/* 平滑的过渡效果 */
+* {
+	transition: background-color 0.2s ease, color 0.2s ease,
+		border-color 0.2s ease;
+}
+
+/* 加载动画 */
+.loading-spinner {
+	border: 2px solid #f3f3f3;
+	border-top: 2px solid #0284c7;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+/* 淡入动画 */
+.fade-in {
+	animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* 脉冲动画用于加载状态 */
+.pulse-animation {
+	animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/* 文本截断 */
+.line-clamp-2 {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.line-clamp-3 {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: #f1f1f1;
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #888;
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: #555;
+}
+
+/* 代码块样式 */
+code {
+	background-color: #f3f4f6;
+	padding: 0.125rem 0.25rem;
+	border-radius: 0.25rem;
+	font-family: 'Courier New', monospace;
+	font-size: 0.875em;
+}
+
+/* 焦点样式 */
+input:focus,
+textarea:focus,
+button:focus {
+	outline: 2px solid #0284c7;
+	outline-offset: 2px;
+}
+
+/* 禁用状态 */
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+/* 错误消息样式 */
+.error-message {
+	background-color: #fee;
+	border-left: 4px solid #dc2626;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	color: #991b1b;
+}
+
+/* 成功消息样式 */
+.success-message {
+	background-color: #f0fdf4;
+	border-left: 4px solid #22c55e;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	color: #166534;
+}
+
+/* 警告消息样式 */
+.warning-message {
+	background-color: #fffbeb;
+	border-left: 4px solid #f59e0b;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	color: #92400e;
+}
+
+/* 卡片悬停效果 */
+.card-hover {
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+		0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* 响应式文本 */
+@media (max-width: 640px) {
+	h1 {
+		font-size: 1.5rem;
+	}
+	h2 {
+		font-size: 1.25rem;
+	}
+	h3 {
+		font-size: 1.125rem;
+	}
+}
+
+/* 打印样式 */
+@media print {
+	.no-print {
+		display: none;
+	}
+}
