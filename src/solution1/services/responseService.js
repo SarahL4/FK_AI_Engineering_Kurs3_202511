@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * 响应服务 - 处理文件搜索和网络搜索
+ * Response Service - Handle file search and web search
  */
 export class ResponseService {
 	constructor() {
@@ -16,36 +16,38 @@ export class ResponseService {
 	}
 
 	/**
-	 * 查询 - 文件搜索和网络搜索
-	 * @param {string} query - 用户查询
+	 * Query - File search and web search
+	 * @param {string} query - User query
 	 * @param {string} vectorStoreId - Vector Store ID
-	 * @param {string} previousResponseId - 前一个响应 ID（用于对话上下文）
-	 * @returns {Promise<Object>} 查询结果
+	 * @param {string} previousResponseId - Previous response ID (for conversation context)
+	 * @returns {Promise<Object>} Query result
 	 */
 	async query(query, vectorStoreId, previousResponseId = null) {
 		try {
-			Logger.info(`[方案1] 使用OpenAI最便宜的模型: ${OPENAI_MODELS.CHEAPEST}`);
-			Logger.info(`查询: ${query}`);
+			Logger.info(
+				`[Solution 1] Using OpenAI's cheapest model: ${OPENAI_MODELS.CHEAPEST}`
+			);
+			Logger.info(`Query: ${query}`);
 
-			// 并行执行文件搜索和网络搜索
+			// Execute file search and web search in parallel
 			const [fileResponse, webResponse] = await Promise.all([
 				this.fileSearch(query, vectorStoreId, previousResponseId),
 				this.webSearch(query),
 			]);
 
-			// 计算总 token 使用量
+			// Calculate total token usage
 			const totalInputTokens =
 				fileResponse.usage.input_tokens + webResponse.usage.input_tokens;
 			const totalOutputTokens =
 				fileResponse.usage.output_tokens + webResponse.usage.output_tokens;
 
-			// 计算成本
+			// Calculate cost
 			const modelCost = MODEL_COSTS[OPENAI_MODELS.CHEAPEST];
 			const inputCost = (totalInputTokens / 1000000) * 0.15;
 			const outputCost = (totalOutputTokens / 1000000) * 0.6;
 			const totalCost = inputCost + outputCost;
 
-			// 使用Logger记录成本
+			// Log cost using Logger
 			Logger.cost(
 				OPENAI_MODELS.CHEAPEST,
 				{
@@ -72,7 +74,7 @@ export class ResponseService {
 				timestamp: new Date().toISOString(),
 			};
 		} catch (error) {
-			console.error('❌ 查询失败:', error);
+			console.error('❌ Query failed:', error);
 			throw ErrorHandler.handle(error, {
 				operation: 'query',
 				query,
@@ -82,15 +84,15 @@ export class ResponseService {
 	}
 
 	/**
-	 * 文件搜索 - 使用 file_search 工具
-	 * @param {string} query - 用户查询
+	 * File search - Using file_search tool
+	 * @param {string} query - User query
 	 * @param {string} vectorStoreId - Vector Store ID
-	 * @param {string} previousResponseId - 前一个响应 ID
-	 * @returns {Promise<Object>} 文件搜索结果
+	 * @param {string} previousResponseId - Previous response ID
+	 * @returns {Promise<Object>} File search result
 	 */
 	async fileSearch(query, vectorStoreId, previousResponseId = null) {
 		try {
-			console.log(`🔍 执行文件搜索...`);
+			console.log(`🔍 Executing file search...`);
 
 			const requestConfig = {
 				model: OPENAI_MODELS.CHEAPEST, // gpt-4o-mini
@@ -101,33 +103,33 @@ export class ResponseService {
 						vector_store_ids: [vectorStoreId],
 					},
 				],
-				store: true, // 存储响应以便后续使用
+				store: true, // Store response for future use
 			};
 
-			// 如果有前一个响应 ID，添加到配置中以维护对话上下文
+			// If previous response ID exists, add it to config to maintain conversation context
 			if (previousResponseId) {
 				requestConfig.previous_response_id = previousResponseId;
 			}
 
 			const response = await this.client.responses.create(requestConfig);
 
-			console.log(`✅ 文件搜索完成`);
+			console.log(`✅ File search completed`);
 
 			return response;
 		} catch (error) {
-			console.error('❌ 文件搜索失败:', error);
+			console.error('❌ File search failed:', error);
 			throw error;
 		}
 	}
 
 	/**
-	 * 网络搜索 - 使用 OpenAI 内置的 web_search_preview 工具
-	 * @param {string} query - 用户查询
-	 * @returns {Promise<Object>} 网络搜索结果
+	 * Web search - Using OpenAI's built-in web_search_preview tool
+	 * @param {string} query - User query
+	 * @returns {Promise<Object>} Web search result
 	 */
 	async webSearch(query) {
 		try {
-			console.log(`🌐 执行网络搜索...`);
+			console.log(`🌐 Executing web search...`);
 
 			const response = await this.client.responses.create({
 				model: OPENAI_MODELS.CHEAPEST, // gpt-4o-mini
@@ -139,28 +141,28 @@ export class ResponseService {
 				],
 			});
 
-			console.log(`✅ 网络搜索完成`);
+			console.log(`✅ Web search completed`);
 
 			return response;
 		} catch (error) {
-			console.error('❌ 网络搜索失败:', error);
+			console.error('❌ Web search failed:', error);
 			throw error;
 		}
 	}
 
 	/**
-	 * 仅文件搜索（不进行网络搜索）
-	 * @param {string} query - 用户查询
+	 * File search only (without web search)
+	 * @param {string} query - User query
 	 * @param {string} vectorStoreId - Vector Store ID
-	 * @param {string} previousResponseId - 前一个响应 ID
-	 * @returns {Promise<Object>} 文件搜索结果
+	 * @param {string} previousResponseId - Previous response ID
+	 * @returns {Promise<Object>} File search result
 	 */
 	async fileSearchOnly(query, vectorStoreId, previousResponseId = null) {
 		try {
 			console.log(
-				`💰 [方案1] 使用OpenAI最便宜的模型: ${OPENAI_MODELS.CHEAPEST}`
+				`💰 [Solution 1] Using OpenAI's cheapest model: ${OPENAI_MODELS.CHEAPEST}`
 			);
-			console.log(`📝 查询（仅文件搜索）: ${query}`);
+			console.log(`📝 Query (file search only): ${query}`);
 
 			const response = await this.fileSearch(
 				query,
@@ -168,23 +170,23 @@ export class ResponseService {
 				previousResponseId
 			);
 
-			// 计算成本
+			// Calculate cost
 			const inputCost = (response.usage.input_tokens / 1000000) * 0.15;
 			const outputCost = (response.usage.output_tokens / 1000000) * 0.6;
 			const totalCost = inputCost + outputCost;
 
-			console.log(`📊 Token使用统计:`);
+			console.log(`📊 Token usage statistics:`);
 			console.log(
-				`   输入: ${
+				`   Input: ${
 					response.usage.input_tokens
-				} tokens (约 $${inputCost.toFixed(6)})`
+				} tokens (approx. $${inputCost.toFixed(6)})`
 			);
 			console.log(
-				`   输出: ${
+				`   Output: ${
 					response.usage.output_tokens
-				} tokens (约 $${outputCost.toFixed(6)})`
+				} tokens (approx. $${outputCost.toFixed(6)})`
 			);
-			console.log(`   总成本: 约 $${totalCost.toFixed(6)}`);
+			console.log(`   Total cost: approx. $${totalCost.toFixed(6)}`);
 
 			return {
 				success: true,
@@ -201,7 +203,7 @@ export class ResponseService {
 				timestamp: new Date().toISOString(),
 			};
 		} catch (error) {
-			console.error('❌ 文件搜索失败:', error);
+			console.error('❌ File search failed:', error);
 			throw ErrorHandler.handle(error, {
 				operation: 'fileSearchOnly',
 				query,
@@ -211,9 +213,9 @@ export class ResponseService {
 	}
 
 	/**
-	 * 获取响应详情
-	 * @param {string} responseId - 响应 ID
-	 * @returns {Promise<Object>} 响应详情
+	 * Get response details
+	 * @param {string} responseId - Response ID
+	 * @returns {Promise<Object>} Response details
 	 */
 	async getResponse(responseId) {
 		try {

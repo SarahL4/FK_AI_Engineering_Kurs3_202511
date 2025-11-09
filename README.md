@@ -1,128 +1,162 @@
-# Försäkringskassan AI 助手 - 方案 1: OpenAI Agent SDK
+# Försäkringskassan AI Assistant - Solution 1: OpenAI Agent SDK
 
-基于 OpenAI Responses API 和 Agent SDK 的智能问答系统，用于回答关于瑞典 föräldrarpenning（父母津贴）和 barn（儿童）的问题。
+An intelligent Q&A system based on OpenAI Responses API and Agent SDK, designed to answer questions about Swedish föräldrarpenning (parental allowance) and barn (children).
 
-## ✨ 特性
+## ✨ Features
 
-- 📄 **PDF 文件上传**: 上传 PDF 到 OpenAI Vector Store 进行智能搜索
-- 🔍 **文件搜索**: 使用 OpenAI 的 file_search 工具在上传的文档中搜索信息
-- 🌐 **网络搜索**: 使用 OpenAI 内置的 web_search_preview 工具进行实时网络搜索
-- 💾 **对话记忆**: 自动维护对话上下文，提供更准确的回答
-- 💰 **成本优化**: 使用 gpt-4o-mini（OpenAI 最便宜的模型）
-- 📊 **使用统计**: 实时显示 Token 使用量和预估成本
-- 🎨 **现代 UI**: 使用 Tailwind CSS 构建的响应式界面
+- 📄 **Pre-loaded PDF**: PDF document pre-uploaded to OpenAI Vector Store for instant access
+- 🔍 **File Search**: Uses OpenAI's file_search tool to search information in the uploaded document
+- 🌐 **Web Search**: Uses OpenAI's built-in web_search_preview tool for real-time web searches
+- 💾 **Conversation Memory**: Automatically maintains conversation context for more accurate answers
+- 💰 **Cost Optimized**: Uses gpt-4o-mini (OpenAI's cheapest model)
+- 📊 **Usage Statistics**: Real-time display of token usage and estimated costs
+- 🎨 **Modern UI**: Responsive interface built with Tailwind CSS
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 安装依赖
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. 配置环境变量
+### 2. Configure Environment Variables
 
-创建 `.env` 文件（参考 `.env.example`）：
+Create a `.env` file (refer to `.env.example`):
 
 ```env
-# OpenAI API Key（必需）
+# OpenAI API Key (Required)
 OPENAI_API_KEY=your_openai_api_key_here
 
-# 服务器配置（可选）
+# Vector Store ID (Required - generated in step 3)
+VECTOR_STORE_ID=your_vector_store_id_here
+
+# Server Configuration (Optional)
 PORT=3000
 NODE_ENV=development
+OPENAI_MODEL=gpt-4o-mini
 ```
 
-### 3. 启动服务器
+### 3. Initialize Vector Store (First Time Only)
+
+Upload the PDF document to OpenAI Vector Store:
 
 ```bash
-# 开发模式（带热重载）
+npm run init:vectorstore
+```
+
+This will:
+
+- Upload `src/assets/FK.pdf` to OpenAI
+- Create a Vector Store
+- Attach the file to the Vector Store
+- Output a `VECTOR_STORE_ID` that you need to add to your `.env` file
+
+**Important**: Copy the `VECTOR_STORE_ID` from the output and add it to your `.env` file.
+
+### 4. Start the Server
+
+```bash
+# Development mode (with hot reload)
 npm run dev
 
-# 生产模式
+# Production mode
 npm start
 ```
 
-### 4. 访问应用
+### 5. Access the Application
 
-打开浏览器访问：[http://localhost:3000](http://localhost:3000)
+Open your browser and visit: [http://localhost:3000](http://localhost:3000)
 
-## 📖 使用指南
+## 📖 Usage Guide
 
-### 步骤 1：上传 PDF 文件
+### Ask Questions
 
-1. 点击"选择 PDF 文件"按钮
-2. 选择一个关于 Försäkringskassan 的 PDF 文件（最大 10MB）
-3. 点击"开始上传"
-4. 等待文件上传到 OpenAI Vector Store
+1. Open the application in your browser
+2. The Vector Store is automatically loaded on page load
+3. Enter your question in the text box
+   - Example: "Hur många dagar med föräldrapenning kan man få?"
+4. Click "Submit Question and Search"
+5. The system will simultaneously execute:
+   - **File Search**: Searches for relevant information in the pre-loaded PDF
+   - **Web Search**: Searches the internet for the latest information
 
-### 步骤 2：提问
+### View Results
 
-1. 在文本框中输入您的问题
-2. 例如："Hur många dagar med föräldrapenning kan man få?"
-3. 点击"提交问题并搜索"按钮
-4. 系统会同时执行：
-   - 文件搜索：在上传的 PDF 中查找相关信息
-   - 网络搜索：在互联网上查找最新信息
+- View both file search and web search results side by side
+- Check token usage statistics and estimated costs
+- Browse conversation history
+- Clear conversation history if needed
 
-### 步骤 3：查看结果
+### Sample Questions
 
-- 查看文件搜索和网络搜索的结果
-- 查看 Token 使用统计和预估成本
-- 查看对话历史
+```
+Hur många dagar med föräldrapenning kan man få?
+Om jag har två barn, hur mycket får barnbidrag?
+Vad är reglerna för föräldraledighet?
+```
 
-## 🏗️ 项目结构
+## 🏗️ Project Structure
 
 ```
 FK_Jinyan_Liu_Kurs3_202511/
+├── scripts/
+│   └── init-vector-store.js       # Vector Store initialization script
 ├── src/
-│   ├── solution1/              # 方案1: OpenAI实现
+│   ├── solution1/                 # Solution 1: OpenAI implementation
 │   │   ├── services/
-│   │   │   ├── fileService.js      # 文件上传服务
-│   │   │   ├── responseService.js  # 查询响应服务
-│   │   │   └── memoryService.js    # 记忆管理服务
+│   │   │   ├── fileService.js      # Vector Store configuration service
+│   │   │   ├── responseService.js  # Query response service
+│   │   │   └── memoryService.js    # Memory management service
 │   │   ├── routes/
-│   │   │   └── api.js             # API路由
+│   │   │   └── api.js             # API routes
 │   │   └── utils/
-│   │       └── errorHandler.js    # 错误处理
+│   │       └── errorHandler.js    # Error handling
 │   ├── shared/
 │   │   ├── config/
-│   │   │   └── constants.js       # 配置常量
+│   │   │   └── constants.js       # Configuration constants
 │   │   └── utils/
-│   │       └── validators.js      # 输入验证
-│   ├── public/                # 前端文件
+│   │       ├── logger.js          # Logging utility
+│   │       └── validators.js      # Input validation
+│   ├── public/                    # Frontend files
 │   │   ├── index.html
+│   │   ├── css/
+│   │   │   └── custom.css
 │   │   └── js/
 │   │       └── app.js
-│   └── assets/                # 静态资源
-├── uploads/                   # 临时上传目录
-├── server.js                  # Express服务器
+│   └── assets/                    # Static assets
+│       └── FK.pdf                 # Pre-loaded PDF document
+├── server.js                      # Express server
 ├── package.json
-└── .env                       # 环境变量（需要创建）
+├── .env                          # Environment variables (create this)
+└── .env.example                  # Environment variables template
 ```
 
-## 🔌 API 端点
+## 🔌 API Endpoints
 
-### 上传 PDF
+### Get Configuration
 
 ```http
-POST /api/solution1/upload
-Content-Type: multipart/form-data
-
-Body:
-- pdf: PDF文件
+GET /api/solution1/config
 
 Response:
 {
   "success": true,
   "vectorStoreId": "vs_...",
-  "fileId": "file_...",
-  "fileName": "document.pdf",
-  "status": "completed"
+  "vectorStoreInfo": {
+    "id": "vs_...",
+    "name": "FK",
+    "file_counts": {
+      "completed": 1,
+      "in_progress": 0,
+      "failed": 0
+    },
+    "created_at": 1234567890
+  }
 }
 ```
 
-### 查询
+### Query
 
 ```http
 POST /api/solution1/query
@@ -131,26 +165,28 @@ Content-Type: application/json
 Body:
 {
   "query": "Hur många dagar med föräldrapenning kan man få?",
-  "vectorStoreId": "vs_...",
   "threadId": "user-session-123"
 }
 
 Response:
 {
   "success": true,
-  "fileAnswer": "...",
-  "webAnswer": "...",
+  "fileAnswer": "Du kan få föräldrapenning i upp till 480 dagar för ett barn...",
+  "webAnswer": "According to the latest information...",
   "model": "gpt-4o-mini",
+  "fileResponseId": "resp_...",
+  "webResponseId": "resp_...",
   "usage": {
     "input_tokens": 150,
     "output_tokens": 200,
     "total_tokens": 350,
     "estimated_cost": 0.000142
-  }
+  },
+  "timestamp": "2025-11-09T12:34:56.789Z"
 }
 ```
 
-### 获取对话历史
+### Get Conversation History
 
 ```http
 GET /api/solution1/history/:threadId?limit=10
@@ -162,13 +198,24 @@ Response:
   "summary": {
     "exists": true,
     "messageCount": 5,
-    "totalUsage": { ... }
+    "totalUsage": {
+      "total_tokens": 1750,
+      "estimated_cost": 0.00071
+    }
   },
-  "history": [ ... ]
+  "history": [
+    {
+      "query": "Hur många dagar...",
+      "fileAnswer": "...",
+      "webAnswer": "...",
+      "timestamp": "2025-11-09T12:34:56.789Z",
+      "usage": { ... }
+    }
+  ]
 }
 ```
 
-### 清除对话历史
+### Clear Conversation History
 
 ```http
 DELETE /api/solution1/history/:threadId
@@ -180,131 +227,247 @@ Response:
 }
 ```
 
-## 💰 成本信息
+### Get Vector Store Information
 
-使用 **gpt-4o-mini** 模型（OpenAI 最便宜的选项）：
+```http
+GET /api/solution1/vector-store/:vectorStoreId
 
-- 输入: $0.15 / 1M tokens
-- 输出: $0.60 / 1M tokens
+Response:
+{
+  "success": true,
+  "id": "vs_...",
+  "name": "FK",
+  "file_counts": {
+    "completed": 1
+  },
+  "created_at": 1234567890
+}
+```
 
-示例成本：
+### Get Statistics
 
-- 一个典型的查询（150 输入 + 200 输出 tokens）≈ $0.00014
-- 100 次查询 ≈ $0.014
+```http
+GET /api/solution1/statistics
 
-## 🧪 测试
+Response:
+{
+  "success": true,
+  "statistics": {
+    "totalThreads": 5,
+    "totalQueries": 25,
+    "totalTokens": 8750,
+    "estimatedTotalCost": 0.00357
+  }
+}
+```
 
-### 手动测试清单
+## 💰 Cost Information
 
-- [ ] 上传 PDF 文件
+Using **gpt-4o-mini** model (OpenAI's cheapest option):
 
-  - [ ] 成功上传小于 10MB 的 PDF
-  - [ ] 拒绝非 PDF 文件
-  - [ ] 拒绝超过 10MB 的文件
-  - [ ] 显示上传进度
-  - [ ] 显示上传成功消息
+- Input: $0.15 / 1M tokens
+- Output: $0.60 / 1M tokens
 
-- [ ] 文件搜索
+Example costs:
 
-  - [ ] 在上传的 PDF 中正确搜索信息
-  - [ ] 显示搜索结果
-  - [ ] 显示 Token 使用统计
+- A typical query (150 input + 200 output tokens) ≈ $0.00014
+- 100 queries ≈ $0.014
+- 1,000 queries ≈ $0.14
 
-- [ ] 网络搜索
+**One-time costs:**
 
-  - [ ] 执行网络搜索并返回结果
-  - [ ] 同时显示文件和网络搜索结果
+- Initial Vector Store creation and file upload: ~$0.001-0.01 (depending on PDF size)
 
-- [ ] 对话记忆
+## 🧪 Testing
 
-  - [ ] 保持对话上下文
-  - [ ] 显示对话历史
-  - [ ] 清除对话历史
+### Manual Test Checklist
 
-- [ ] 错误处理
-  - [ ] 处理 API 错误
-  - [ ] 处理文件上传错误
-  - [ ] 显示用户友好的错误消息
+- [ ] **Vector Store Initialization**
 
-## ⚠️ 注意事项
+  - [ ] Successfully run `npm run init:vectorstore`
+  - [ ] Vector Store ID is generated
+  - [ ] File is processed and marked as completed
+  - [ ] VECTOR_STORE_ID can be added to `.env`
 
-1. **API 密钥安全**:
+- [ ] **Configuration Loading**
 
-   - 永远不要提交 `.env` 文件到 Git
-   - 不要在前端代码中暴露 API 密钥
-   - 使用环境变量管理敏感信息
+  - [ ] Vector Store loads automatically on page load
+  - [ ] Configuration endpoint returns correct information
+  - [ ] Error shown if VECTOR_STORE_ID is not configured
 
-2. **成本控制**:
+- [ ] **File Search**
 
-   - 定期检查 OpenAI 使用量
-   - 设置 API 使用限制
-   - 考虑实现查询限流
+  - [ ] Correctly searches information in the pre-loaded PDF
+  - [ ] Displays search results
+  - [ ] Shows token usage statistics
 
-3. **文件大小限制**:
+- [ ] **Web Search**
 
-   - 当前限制为 10MB
-   - 可以在 `constants.js` 中调整
+  - [ ] Executes web search and returns results
+  - [ ] Displays both file and web search results simultaneously
+  - [ ] Results are relevant to the query
 
-4. **网络搜索**:
-   - 使用 OpenAI 内置的 `web_search_preview` 工具
-   - 无需额外的 API 密钥
+- [ ] **Conversation Memory**
 
-## 🔧 故障排除
+  - [ ] Maintains conversation context
+  - [ ] Displays conversation history
+  - [ ] Clears conversation history when requested
+  - [ ] Thread IDs are properly managed
 
-### 服务器无法启动
+- [ ] **Error Handling**
+  - [ ] Handles API errors gracefully
+  - [ ] Handles missing VECTOR_STORE_ID error
+  - [ ] Displays user-friendly error messages
+  - [ ] Shows appropriate error for rate limits
+
+## ⚠️ Important Notes
+
+1. **API Key Security**:
+
+   - Never commit `.env` file to Git
+   - Don't expose API keys in frontend code
+   - Use environment variables for sensitive information
+   - `.env` is already in `.gitignore`
+
+2. **Cost Control**:
+
+   - Regularly check OpenAI usage
+   - Set API usage limits in OpenAI dashboard
+   - Consider implementing query rate limiting
+   - Monitor token usage statistics
+
+3. **Vector Store Management**:
+
+   - Vector Store is persistent - no need to recreate it
+   - Only run `init:vectorstore` once or when updating the PDF
+   - VECTOR_STORE_ID remains valid until explicitly deleted
+   - Old Vector Stores should be deleted to avoid unnecessary charges
+
+4. **Web Search**:
+
+   - Uses OpenAI's built-in `web_search_preview` tool
+   - No additional API keys required
+   - May have slightly higher token costs than file search only
+
+5. **PDF Updates**:
+   - To update the PDF document, run `npm run init:vectorstore` again
+   - Update the VECTOR_STORE_ID in `.env` with the new ID
+   - Consider deleting the old Vector Store via OpenAI dashboard
+
+## 🔧 Troubleshooting
+
+### Server Won't Start
 
 ```
 Error: OPENAI_API_KEY environment variable is missing
 ```
 
-**解决方案**: 确保 `.env` 文件存在并包含有效的 OPENAI_API_KEY
+**Solution**: Ensure `.env` file exists and contains a valid OPENAI_API_KEY
 
-### 文件上传失败
+### Vector Store Not Configured
+
+```
+Error: VECTOR_STORE_ID not configured in environment variables
+```
+
+**Solution**:
+
+1. Run `npm run init:vectorstore`
+2. Copy the generated VECTOR_STORE_ID
+3. Add it to your `.env` file
+4. Restart the server
+
+### Initialization Failed
 
 ```
 Error: File processing timeout
 ```
 
-**解决方案**:
+**Solution**:
 
-- 检查文件大小（最大 10MB）
-- 确保文件是有效的 PDF
-- 检查 OpenAI API 配额
+- Check your internet connection
+- Ensure the PDF file exists at `src/assets/FK.pdf`
+- Verify your OpenAI API key is valid
+- Check OpenAI API quota
 
-### 查询失败
+### Query Failed
 
 ```
 Error: Rate limit exceeded
 ```
 
-**解决方案**:
+**Solution**:
 
-- 等待几分钟后重试
-- 检查 OpenAI API 限额
-- 考虑升级 API 计划
+- Wait a few minutes before retrying
+- Check OpenAI API limits in your dashboard
+- Consider upgrading your API plan
 
-## 📚 技术栈
+### Configuration Load Failed
 
-- **后端**: Node.js, Express
-- **前端**: HTML, Tailwind CSS, Vanilla JavaScript
-- **AI 服务**: OpenAI Responses API, gpt-4o-mini
-- **文件处理**: Multer
-- **环境配置**: dotenv
+```
+Error: Failed to get config
+```
 
-## 🚧 未来改进
+**Solution**:
 
-- [ ] 实现方案 2：Langchain Agent（使用免费的 Google Gemini）
-- [ ] 添加用户认证
-- [ ] 实现 Supabase 向量存储
-- [ ] 添加更多文件格式支持
-- [ ] 实现查询限流
-- [ ] 添加单元测试和集成测试
-- [ ] 部署到生产环境（Vercel/Netlify/Railway）
+- Verify VECTOR_STORE_ID is correctly set in `.env`
+- Check that the Vector Store still exists in OpenAI
+- Restart the server after updating `.env`
 
-## 📝 许可证
+## 📚 Tech Stack
+
+- **Backend**: Node.js, Express
+- **Frontend**: HTML, Tailwind CSS, Vanilla JavaScript
+- **AI Service**: OpenAI Responses API, gpt-4o-mini
+- **Tools**:
+  - OpenAI file_search (Vector Store)
+  - OpenAI web_search_preview
+- **Environment**: dotenv
+- **Vector Storage**: OpenAI Vector Store (persistent)
+
+## 🚧 Future Improvements
+
+- [ ] Implement Solution 2: Langchain Agent (using free Google Gemini)
+- [ ] Add user authentication
+- [ ] Implement Supabase vector storage option
+- [ ] Support for multiple PDF documents
+- [ ] Implement query rate limiting
+- [ ] Add unit tests and integration tests
+- [ ] Add multi-language support (Swedish/English)
+- [ ] Deploy to production (Vercel/Netlify/Railway)
+- [ ] Add PDF update UI for admins
+- [ ] Implement vector store cleanup utility
+
+## 📋 Available Scripts
+
+- `npm start` - Start the server in production mode
+- `npm run dev` - Start the server in development mode with hot reload
+- `npm run init:vectorstore` - Initialize and upload PDF to Vector Store
+- `npm test` - Run tests (not yet implemented)
+
+## 📝 License
 
 ISC
 
-## 👤 作者
+## 👤 Author
 
 Jinyan Liu - Kurs 3 - 2025/11
+
+---
+
+## 🔄 Migration from Upload-based System
+
+If you're migrating from the previous version where users uploaded PDFs:
+
+1. Run `npm run init:vectorstore` to create the Vector Store
+2. Add VECTOR_STORE_ID to your `.env` file
+3. Restart the server
+4. The PDF is now pre-loaded and ready for queries
+
+**Benefits of the new system:**
+
+- ✅ Faster user experience (no upload wait time)
+- ✅ Reduced API costs (upload only once)
+- ✅ Simpler user interface
+- ✅ More reliable (no upload failures)
+- ✅ Persistent storage

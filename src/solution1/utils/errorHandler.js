@@ -1,12 +1,12 @@
 /**
- * 错误处理类
+ * Error Handler Class
  */
 export class ErrorHandler {
 	/**
-	 * 处理错误并返回标准化的错误响应
-	 * @param {Error} error - 错误对象
-	 * @param {Object} context - 错误上下文
-	 * @returns {Object} 标准化的错误响应
+	 * Handle error and return standardized error response
+	 * @param {Error} error - Error object
+	 * @param {Object} context - Error context
+	 * @returns {Object} Standardized error response
 	 */
 	static handle(error, context = {}) {
 		const errorResponse = {
@@ -19,7 +19,7 @@ export class ErrorHandler {
 			},
 		};
 
-		// 记录错误日志
+		// Log error
 		console.error('❌ Error occurred:', {
 			type: errorResponse.error.type,
 			message: errorResponse.error.message,
@@ -31,12 +31,12 @@ export class ErrorHandler {
 	}
 
 	/**
-	 * 获取错误类型
-	 * @param {Error} error - 错误对象
-	 * @returns {string} 错误类型
+	 * Get error type
+	 * @param {Error} error - Error object
+	 * @returns {string} Error type
 	 */
 	static getErrorType(error) {
-		// OpenAI API 错误
+		// OpenAI API errors
 		if (error.status) {
 			if (error.status === 401) return 'AUTHENTICATION_ERROR';
 			if (error.status === 429) return 'RATE_LIMIT_ERROR';
@@ -45,28 +45,28 @@ export class ErrorHandler {
 			return 'API_ERROR';
 		}
 
-		// 文件相关错误
+		// File-related errors
 		if (error.code === 'LIMIT_FILE_SIZE') return 'FILE_SIZE_ERROR';
 		if (error.code === 'ENOENT') return 'FILE_NOT_FOUND_ERROR';
 
-		// 验证错误
+		// Validation errors
 		if (error.name === 'ValidationError') return 'VALIDATION_ERROR';
 
-		// 网络错误
+		// Network errors
 		if (error.code === 'ECONNREFUSED') return 'CONNECTION_ERROR';
 		if (error.code === 'ETIMEDOUT') return 'TIMEOUT_ERROR';
 
-		// 默认
+		// Default
 		return 'UNKNOWN_ERROR';
 	}
 
 	/**
-	 * 获取用户友好的错误消息
-	 * @param {Error} error - 错误对象
-	 * @returns {string} 错误消息
+	 * Get user-friendly error message
+	 * @param {Error} error - Error object
+	 * @returns {string} Error message
 	 */
 	static getErrorMessage(error) {
-		// OpenAI API 错误
+		// OpenAI API errors
 		if (error.status === 401) {
 			return 'Invalid API key. Please check your OpenAI API key configuration.';
 		}
@@ -80,7 +80,7 @@ export class ErrorHandler {
 			return 'Bad request. Please check your input and try again.';
 		}
 
-		// 文件错误
+		// File errors
 		if (error.code === 'LIMIT_FILE_SIZE') {
 			return 'File size exceeds the maximum allowed limit.';
 		}
@@ -88,18 +88,18 @@ export class ErrorHandler {
 			return 'File not found. Please check the file path.';
 		}
 
-		// 使用原始错误消息或默认消息
+		// Use original error message or default message
 		return error.message || 'An unexpected error occurred. Please try again.';
 	}
 
 	/**
-	 * 处理 API 错误
-	 * @param {Error} error - 错误对象
-	 * @param {Object} context - 上下文
-	 * @returns {Object} 错误处理结果
+	 * Handle API error
+	 * @param {Error} error - Error object
+	 * @param {Object} context - Context
+	 * @returns {Object} Error handling result
 	 */
 	static handleAPIError(error, context) {
-		// Rate limit - 实现退避策略
+		// Rate limit - implement backoff strategy
 		if (error.status === 429) {
 			return {
 				retry: true,
@@ -108,7 +108,7 @@ export class ErrorHandler {
 			};
 		}
 
-		// 认证错误 - 不重试
+		// Authentication error - do not retry
 		if (error.status === 401) {
 			return {
 				retry: false,
@@ -116,7 +116,7 @@ export class ErrorHandler {
 			};
 		}
 
-		// 其他 API 错误 - 可以重试
+		// Other API errors - can retry
 		return {
 			retry: true,
 			delay: 1000,
@@ -125,21 +125,21 @@ export class ErrorHandler {
 	}
 
 	/**
-	 * 计算退避延迟（指数退避）
-	 * @param {number} retryCount - 重试次数
-	 * @returns {number} 延迟时间（毫秒）
+	 * Calculate backoff delay (exponential backoff)
+	 * @param {number} retryCount - Retry count
+	 * @returns {number} Delay time (milliseconds)
 	 */
 	static calculateBackoff(retryCount) {
-		const baseDelay = 1000; // 1秒
-		const maxDelay = 60000; // 60秒
+		const baseDelay = 1000; // 1 second
+		const maxDelay = 60000; // 60 seconds
 		const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
 		return delay;
 	}
 
 	/**
-	 * 处理验证错误
-	 * @param {Error} error - 错误对象
-	 * @returns {Object} 错误响应
+	 * Handle validation error
+	 * @param {Error} error - Error object
+	 * @returns {Object} Error response
 	 */
 	static handleValidationError(error) {
 		return {
@@ -153,11 +153,11 @@ export class ErrorHandler {
 	}
 
 	/**
-	 * 创建自定义错误
-	 * @param {string} message - 错误消息
-	 * @param {string} type - 错误类型
-	 * @param {number} status - HTTP 状态码
-	 * @returns {Error} 自定义错误对象
+	 * Create custom error
+	 * @param {string} message - Error message
+	 * @param {string} type - Error type
+	 * @param {number} status - HTTP status code
+	 * @returns {Error} Custom error object
 	 */
 	static createError(message, type = 'ERROR', status = 500) {
 		const error = new Error(message);

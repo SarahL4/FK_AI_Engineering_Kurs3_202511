@@ -1,19 +1,12 @@
-// 全局状态
+// Global state
 const state = {
 	vectorStoreId: null,
 	threadId: 'user-session-' + Date.now(),
-	isUploading: false,
 	isQuerying: false,
 };
 
-// DOM 元素
+// DOM elements
 const elements = {
-	pdfUpload: document.getElementById('pdfUpload'),
-	fileName: document.getElementById('fileName'),
-	uploadBtn: document.getElementById('uploadBtn'),
-	uploadProgress: document.getElementById('uploadProgress'),
-	uploadSuccess: document.getElementById('uploadSuccess'),
-	uploadError: document.getElementById('uploadError'),
 	queryInput: document.getElementById('queryInput'),
 	submitBtn: document.getElementById('submitBtn'),
 	resultsContainer: document.getElementById('resultsContainer'),
@@ -27,12 +20,13 @@ const elements = {
 	historyList: document.getElementById('historyList'),
 	clearHistoryBtn: document.getElementById('clearHistoryBtn'),
 	vectorStoreStatus: document.getElementById('vectorStoreStatus'),
+	heroVectorStatus: document.getElementById('heroVectorStatus'),
 	loadingOverlay: document.getElementById('loadingOverlay'),
 	loadingText: document.getElementById('loadingText'),
 };
 
-// 工具函数
-function showLoading(text = '处理中...') {
+// Utility functions
+function showLoading(text = 'Processing...') {
 	elements.loadingText.textContent = text;
 	elements.loadingOverlay.classList.remove('hidden');
 }
@@ -58,7 +52,7 @@ function showError(message, elementId = null) {
 
 function formatMarkdown(text) {
 	if (!text) return '';
-	// 简单的 Markdown 格式化
+	// Simple Markdown formatting
 	return text
 		.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
 		.replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -66,127 +60,104 @@ function formatMarkdown(text) {
 		.replace(/`(.*?)`/g, '<code class="bg-gray-200 px-1 rounded">$1</code>');
 }
 
-// PDF 上传处理
-elements.pdfUpload.addEventListener('change', (e) => {
-	const file = e.target.files[0];
-	if (file) {
-		if (file.type !== 'application/pdf') {
-			showError('只能上传PDF文件', 'uploadError');
-			elements.pdfUpload.value = '';
-			return;
-		}
-
-		if (file.size > 10 * 1024 * 1024) {
-			showError('文件大小不能超过10MB', 'uploadError');
-			elements.pdfUpload.value = '';
-			return;
-		}
-
-		elements.fileName.textContent = file.name;
-		elements.uploadBtn.classList.remove('hidden');
-		elements.uploadSuccess.classList.add('hidden');
-		elements.uploadError.classList.add('hidden');
-	}
-});
-
-elements.uploadBtn.addEventListener('click', async () => {
-	const file = elements.pdfUpload.files[0];
-	if (!file || state.isUploading) return;
-
-	state.isUploading = true;
-	elements.uploadBtn.disabled = true;
-	elements.uploadProgress.classList.remove('hidden');
-	elements.uploadSuccess.classList.add('hidden');
-	elements.uploadError.classList.add('hidden');
-
+// Load configuration and Vector Store ID
+async function loadConfig() {
 	try {
-		const formData = new FormData();
-		formData.append('pdf', file);
+		elements.vectorStoreStatus.textContent = 'Loading...';
+		if (elements.heroVectorStatus) {
+			elements.heroVectorStatus.textContent = 'Loading...';
+		}
 
-		const response = await fetch('/api/solution1/upload', {
-			method: 'POST',
-			body: formData,
-		});
-
+		const response = await fetch('/api/solution1/config');
 		const data = await response.json();
 
 		if (!response.ok) {
-			throw new Error(data.error || 'Upload failed');
+			throw new Error(
+				data.error ||
+					'Failed to load config. Please ensure you have run: npm run init:vectorstore'
+			);
 		}
 
 		if (data.success) {
 			state.vectorStoreId = data.vectorStoreId;
-			elements.uploadSuccess.classList.remove('hidden');
-			elements.uploadProgress.classList.add('hidden');
-			elements.uploadBtn.classList.add('hidden');
 
-			// 更新状态显示
-			elements.vectorStoreStatus.textContent = `已上传: ${data.fileName} (${data.vectorStoreId})`;
-			elements.vectorStoreStatus.classList.add('text-success-800');
+			// Update status display
+			const info = data.vectorStoreInfo;
+			const statusText = `✅ Loaded (${
+				info.file_counts?.completed || 0
+			} files)`;
+			elements.vectorStoreStatus.textContent = statusText;
 
-			// 启用查询功能
-			elements.queryInput.disabled = false;
-			elements.submitBtn.disabled = false;
-			elements.queryInput.placeholder = '请输入您的问题...';
-			elements.queryInput.nextElementSibling.textContent =
-				'已就绪，可以开始提问';
+			// Update hero status
+			if (elements.heroVectorStatus) {
+				elements.heroVectorStatus.textContent = '✅ Ready';
+			}
 
-			console.log('✅ 文件上传成功:', data);
+			console.log('✅ Vector Store loaded:', data);
+			console.log('📌 Vector Store ID:', state.vectorStoreId);
 		}
 	} catch (error) {
-		console.error('❌ 上传失败:', error);
-		showError(error.message, 'uploadError');
-		elements.uploadProgress.classList.add('hidden');
-	} finally {
-		state.isUploading = false;
-		elements.uploadBtn.disabled = false;
-	}
-});
+		console.error('❌ Failed to load config:', error);
+		elements.vectorStoreStatus.textContent = `❌ Error`;
+		elements.vectorStoreStatus.classList.add('text-red-800');
 
-// 查询处理
+		if (elements.heroVectorStatus) {
+			elements.heroVectorStatus.textContent = '❌ Error';
+		}
+
+		elements.queryInput.disabled = true;
+		elements.submitBtn.disabled = true;
+
+		showError(
+			`Failed to load config: ${error.message}. Please run: npm run init:vectorstore`
+		);
+	}
+}
+
+// Query handling
 elements.submitBtn.addEventListener('click', async () => {
 	const query = elements.queryInput.value.trim();
 
-	// 验证输入
+	// Validate input
 	if (!query) {
-		showError('请输入问题');
+		showError('Please enter a question');
 		elements.queryInput.focus();
 		return;
 	}
 
 	if (query.length > 1000) {
-		showError('问题太长，最多1000个字符');
+		showError('Question too long, maximum 1000 characters');
 		return;
 	}
 
 	if (!state.vectorStoreId) {
-		showError('请先上传PDF文件');
+		showError('Vector Store not loaded, please refresh the page');
 		return;
 	}
 
 	if (state.isQuerying) {
-		console.log('⏳ 已有查询正在进行中...');
+		console.log('⏳ Query already in progress...');
 		return;
 	}
 
 	state.isQuerying = true;
 	elements.submitBtn.disabled = true;
-	showLoading('正在查询...');
+	showLoading('Querying...');
 
-	// 显示结果容器
+	// Show results container
 	elements.resultsContainer.classList.remove('hidden');
 
-	// 重置结果显示
+	// Reset result displays
 	elements.fileAnswer.innerHTML = `
 		<div class="flex items-center justify-center gap-2 text-gray-500">
 			<div class="loading-spinner"></div>
-			<span>正在搜索文件...</span>
+			<span>Searching files...</span>
 		</div>
 	`;
 	elements.webAnswer.innerHTML = `
 		<div class="flex items-center justify-center gap-2 text-gray-500">
 			<div class="loading-spinner"></div>
-			<span>正在搜索网络...</span>
+			<span>Searching web...</span>
 		</div>
 	`;
 
@@ -198,7 +169,6 @@ elements.submitBtn.addEventListener('click', async () => {
 			},
 			body: JSON.stringify({
 				query: query,
-				vectorStoreId: state.vectorStoreId,
 				threadId: state.threadId,
 			}),
 		});
@@ -210,7 +180,7 @@ elements.submitBtn.addEventListener('click', async () => {
 		}
 
 		if (data.success) {
-			// 显示文件搜索结果
+			// Display file search results
 			elements.fileAnswer.innerHTML = `
 				<div class="prose max-w-none fade-in">
 					<p class="text-gray-800 whitespace-pre-wrap">${formatMarkdown(
@@ -219,7 +189,7 @@ elements.submitBtn.addEventListener('click', async () => {
 				</div>
 			`;
 
-			// 显示网络搜索结果
+			// Display web search results
 			elements.webAnswer.innerHTML = `
 				<div class="prose max-w-none fade-in">
 					<p class="text-gray-800 whitespace-pre-wrap">${formatMarkdown(
@@ -228,7 +198,7 @@ elements.submitBtn.addEventListener('click', async () => {
 				</div>
 			`;
 
-			// 显示 Token 使用统计
+			// Display token usage statistics
 			if (data.usage) {
 				elements.inputTokens.textContent = `${data.usage.input_tokens.toLocaleString()} tokens`;
 				elements.outputTokens.textContent = `${data.usage.output_tokens.toLocaleString()} tokens`;
@@ -237,24 +207,24 @@ elements.submitBtn.addEventListener('click', async () => {
 				)}`;
 			}
 
-			// 清空输入框
+			// Clear input field
 			elements.queryInput.value = '';
 
-			// 加载历史记录
+			// Load history
 			await loadHistory();
 
-			console.log('✅ 查询成功:', data);
+			console.log('✅ Query successful:', data);
 		}
 	} catch (error) {
-		console.error('❌ 查询失败:', error);
+		console.error('❌ Query failed:', error);
 		elements.fileAnswer.innerHTML = `
 			<div class="text-red-800 bg-red-50 p-3 rounded">
-				❌ 查询失败: ${error.message}
+				❌ Query failed: ${error.message}
 			</div>
 		`;
 		elements.webAnswer.innerHTML = `
 			<div class="text-red-800 bg-red-50 p-3 rounded">
-				❌ 查询失败: ${error.message}
+				❌ Query failed: ${error.message}
 			</div>
 		`;
 	} finally {
@@ -264,19 +234,19 @@ elements.submitBtn.addEventListener('click', async () => {
 	}
 });
 
-// Enter 键提交
+// Submit with Enter key
 elements.queryInput.addEventListener('keypress', (e) => {
 	if (e.key === 'Enter' && e.ctrlKey) {
 		elements.submitBtn.click();
 	}
 });
 
-// 实时字符计数
+// Real-time character count
 elements.queryInput.addEventListener('input', (e) => {
 	const length = e.target.value.length;
 	const maxLength = 1000;
 
-	// 如果还没有字符计数元素，创建一个
+	// If character count element doesn't exist, create one
 	if (!document.getElementById('charCount')) {
 		const charCountEl = document.createElement('p');
 		charCountEl.id = 'charCount';
@@ -285,9 +255,9 @@ elements.queryInput.addEventListener('input', (e) => {
 	}
 
 	const charCountEl = document.getElementById('charCount');
-	charCountEl.textContent = `${length} / ${maxLength} 字符`;
+	charCountEl.textContent = `${length} / ${maxLength} characters`;
 
-	// 如果接近限制，改变颜色
+	// Change color if approaching limit
 	if (length > maxLength * 0.9) {
 		charCountEl.className = 'text-xs text-warning-800 mt-1';
 	} else if (length > maxLength) {
@@ -297,7 +267,7 @@ elements.queryInput.addEventListener('input', (e) => {
 	}
 });
 
-// 加载历史记录
+// Load conversation history
 async function loadHistory() {
 	try {
 		const response = await fetch(
@@ -322,18 +292,18 @@ async function loadHistory() {
 						</span>
 					</div>
 					<div class="mb-2">
-						<p class="text-sm font-semibold text-gray-900">问题:</p>
+						<p class="text-sm font-semibold text-gray-900">Question:</p>
 						<p class="text-sm text-gray-700">${item.query}</p>
 					</div>
 					<div class="mb-2">
-						<p class="text-xs font-semibold text-blue-900">文件搜索:</p>
+						<p class="text-xs font-semibold text-blue-900">File Search:</p>
 						<p class="text-xs text-gray-600 line-clamp-2">${item.fileAnswer.substring(
 							0,
 							100
 						)}...</p>
 					</div>
 					<div>
-						<p class="text-xs font-semibold text-green-900">网络搜索:</p>
+						<p class="text-xs font-semibold text-green-900">Web Search:</p>
 						<p class="text-xs text-gray-600 line-clamp-2">${item.webAnswer.substring(
 							0,
 							100
@@ -345,13 +315,14 @@ async function loadHistory() {
 				.join('');
 		}
 	} catch (error) {
-		console.error('❌ 加载历史失败:', error);
+		console.error('❌ Failed to load history:', error);
 	}
 }
 
-// 清除历史
+// Clear history
 elements.clearHistoryBtn.addEventListener('click', async () => {
-	if (!confirm('确定要清除对话历史吗？')) return;
+	if (!confirm('Are you sure you want to clear the conversation history?'))
+		return;
 
 	try {
 		const response = await fetch(`/api/solution1/history/${state.threadId}`, {
@@ -362,18 +333,21 @@ elements.clearHistoryBtn.addEventListener('click', async () => {
 
 		if (data.success) {
 			elements.historyList.innerHTML = `
-				<p class="text-gray-500 text-center text-sm">暂无对话历史</p>
+				<p class="text-gray-500 text-center text-sm">No conversation history</p>
 			`;
 			elements.historyContainer.classList.add('hidden');
-			console.log('✅ 历史已清除');
+			console.log('✅ History cleared');
 		}
 	} catch (error) {
-		console.error('❌ 清除历史失败:', error);
-		alert('清除历史失败: ' + error.message);
+		console.error('❌ Failed to clear history:', error);
+		alert('Failed to clear history: ' + error.message);
 	}
 });
 
-// 初始化
-console.log('🚀 Försäkringskassan AI助手已启动');
+// Initialize
+console.log('🚀 Försäkringskassan AI Assistant started');
 console.log('📝 Session ID:', state.threadId);
-console.log('💰 使用模型: gpt-4o-mini (OpenAI最便宜的模型)');
+console.log('💰 Using model: gpt-4o-mini (OpenAI cheapest model)');
+
+// Load configuration
+loadConfig();

@@ -1,7 +1,4 @@
 import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { FileService } from '../services/fileService.js';
 import { ResponseService } from '../services/responseService.js';
 import { MemoryService } from '../services/memoryService.js';
@@ -10,96 +7,29 @@ import { ErrorHandler } from '../utils/errorHandler.js';
 
 const router = express.Router();
 
-// 获取 __dirname (ES模块中需要)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// 配置 Multer 用于文件上传
-const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		cb(null, 'uploads/');
-	},
-	filename: (req, file, cb) => {
-		const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-		cb(
-			null,
-			file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)
-		);
-	},
-});
-
-const upload = multer({
-	storage: storage,
-	limits: {
-		fileSize: 10 * 1024 * 1024, // 10MB
-	},
-	fileFilter: (req, file, cb) => {
-		if (file.mimetype === 'application/pdf') {
-			cb(null, true);
-		} else {
-			cb(new Error('Only PDF files are allowed'));
-		}
-	},
-});
-
-// 初始化服务
+// Initialize services
 const fileService = new FileService();
 const responseService = new ResponseService();
 const memoryService = new MemoryService();
 
-// 创建 uploads 目录（如果不存在）
-import fs from 'fs';
-if (!fs.existsSync('uploads')) {
-	fs.mkdirSync('uploads');
-}
-
 /**
- * POST /api/solution1/upload
- * 上传 PDF 文件到 OpenAI Vector Store
+ * GET /api/solution1/config
+ * Get configuration information (including Vector Store ID)
  */
-router.post('/upload', upload.single('pdf'), async (req, res) => {
+router.get('/config', async (req, res) => {
 	try {
-		if (!req.file) {
-			return res.status(400).json({
-				success: false,
-				error: 'No file uploaded',
-			});
-		}
+		const vectorStoreId = fileService.getVectorStoreId();
+		const info = await fileService.getVectorStoreInfo(vectorStoreId);
 
-		// 验证文件
-		const validation = Validators.validateFile(req.file);
-		if (!validation.valid) {
-			// 删除上传的文件
-			fs.unlinkSync(req.file.path);
-			return res.status(400).json({
-				success: false,
-				error: validation.error,
-			});
-		}
-
-		console.log(`📤 处理文件上传: ${req.file.originalname}`);
-
-		// 上传到 OpenAI Vector Store
-		const result = await fileService.uploadPDFToVectorStore(
-			req.file.path,
-			req.file.originalname
-		);
-
-		// 删除临时文件
-		fs.unlinkSync(req.file.path);
-
-		res.json(result);
+		res.json({
+			success: true,
+			vectorStoreId,
+			vectorStoreInfo: info,
+		});
 	} catch (error) {
-		console.error('上传失败:', error);
-
-		// 清理临时文件
-		if (req.file && fs.existsSync(req.file.path)) {
-			fs.unlinkSync(req.file.path);
-		}
-
+		console.error('Failed to get config:', error);
 		const errorResponse = ErrorHandler.handle(error, {
-			operation: 'upload',
-			filename: req.file?.originalname,
+			operation: 'getConfig',
 		});
 		res.status(500).json(errorResponse);
 	}
@@ -107,27 +37,18 @@ router.post('/upload', upload.single('pdf'), async (req, res) => {
 
 /**
  * POST /api/solution1/query
- * 查询 - 文件搜索和网络搜索
+ * Query - File search and web search
  */
 router.post('/query', async (req, res) => {
 	try {
-		const { query, vectorStoreId, threadId } = req.body;
+		const { query, threadId } = req.body;
 
-		// 验证输入
+		// Validate input
 		const queryValidation = Validators.validateQuery(query);
 		if (!queryValidation.valid) {
 			return res.status(400).json({
 				success: false,
 				error: queryValidation.error,
-			});
-		}
-
-		const vectorStoreValidation =
-			Validators.validateVectorStoreId(vectorStoreId);
-		if (!vectorStoreValidation.valid) {
-			return res.status(400).json({
-				success: false,
-				error: vectorStoreValidation.error,
 			});
 		}
 
@@ -141,24 +62,27 @@ router.post('/query', async (req, res) => {
 			});
 		}
 
-		// 清理查询
+		// Get configured Vector Store ID
+		const vectorStoreId = fileService.getVectorStoreId();
+
+		// Sanitize query
 		const sanitizedQuery = Validators.sanitizeQuery(query);
 		const finalThreadId = threadId || 'default';
 
-		console.log(`📝 处理查询请求 - Thread: ${finalThreadId}`);
+		console.log(`📝 Processing query request - Thread: ${finalThreadId}`);
 
-		// 获取前一个响应 ID（用于对话上下文）
+		// Get previous response ID (for conversation context)
 		const previousResponseId =
 			memoryService.getPreviousResponseId(finalThreadId);
 
-		// 执行查询
+		// Execute query
 		const result = await responseService.query(
 			sanitizedQuery,
 			vectorStoreId,
 			previousResponseId
 		);
 
-		// 保存到记忆
+		// Save to memory
 		memoryService.saveResponse(
 			finalThreadId,
 			result.fileResponseId,
@@ -170,7 +94,7 @@ router.post('/query', async (req, res) => {
 
 		res.json(result);
 	} catch (error) {
-		console.error('查询失败:', error);
+		console.error('Query failed:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'query',
 			query: req.body.query,
@@ -181,14 +105,14 @@ router.post('/query', async (req, res) => {
 
 /**
  * GET /api/solution1/history/:threadId
- * 获取对话历史
+ * Get conversation history
  */
 router.get('/history/:threadId', (req, res) => {
 	try {
 		const { threadId } = req.params;
 		const { limit } = req.query;
 
-		// 验证 thread ID
+		// Validate thread ID
 		const validation = Validators.validateThreadId(threadId);
 		if (!validation.valid) {
 			return res.status(400).json({
@@ -210,7 +134,7 @@ router.get('/history/:threadId', (req, res) => {
 			history,
 		});
 	} catch (error) {
-		console.error('获取历史失败:', error);
+		console.error('Failed to get history:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getHistory',
 			threadId: req.params.threadId,
@@ -221,7 +145,7 @@ router.get('/history/:threadId', (req, res) => {
 
 /**
  * DELETE /api/solution1/history/:threadId
- * 清除对话历史
+ * Clear conversation history
  */
 router.delete('/history/:threadId', (req, res) => {
 	try {
@@ -244,7 +168,7 @@ router.delete('/history/:threadId', (req, res) => {
 				: 'No history found for this thread',
 		});
 	} catch (error) {
-		console.error('清除历史失败:', error);
+		console.error('Failed to clear history:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'clearHistory',
 			threadId: req.params.threadId,
@@ -255,7 +179,7 @@ router.delete('/history/:threadId', (req, res) => {
 
 /**
  * GET /api/solution1/statistics
- * 获取使用统计
+ * Get usage statistics
  */
 router.get('/statistics', (req, res) => {
 	try {
@@ -265,7 +189,7 @@ router.get('/statistics', (req, res) => {
 			statistics: stats,
 		});
 	} catch (error) {
-		console.error('获取统计失败:', error);
+		console.error('Failed to get statistics:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getStatistics',
 		});
@@ -275,7 +199,7 @@ router.get('/statistics', (req, res) => {
 
 /**
  * GET /api/solution1/vector-store/:vectorStoreId
- * 获取 Vector Store 信息
+ * Get Vector Store information
  */
 router.get('/vector-store/:vectorStoreId', async (req, res) => {
 	try {
@@ -292,7 +216,7 @@ router.get('/vector-store/:vectorStoreId', async (req, res) => {
 		const info = await fileService.getVectorStoreInfo(vectorStoreId);
 		res.json(info);
 	} catch (error) {
-		console.error('获取 Vector Store 信息失败:', error);
+		console.error('Failed to get Vector Store info:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getVectorStoreInfo',
 			vectorStoreId: req.params.vectorStoreId,

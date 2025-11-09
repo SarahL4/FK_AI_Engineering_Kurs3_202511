@@ -1,17 +1,17 @@
 /**
- * 记忆服务 - 管理对话历史和上下文
+ * Memory Service - Manage conversation history and context
  */
 export class MemoryService {
 	constructor() {
-		// 使用 Map 存储对话历史
+		// Use Map to store conversation history
 		// Key: threadId, Value: conversation history object
 		this.conversations = new Map();
 	}
 
 	/**
-	 * 获取前一个响应 ID（用于维护对话上下文）
-	 * @param {string} threadId - 线程 ID
-	 * @returns {string|null} 前一个响应 ID 或 null
+	 * Get previous response ID (for maintaining conversation context)
+	 * @param {string} threadId - Thread ID
+	 * @returns {string|null} Previous response ID or null
 	 */
 	getPreviousResponseId(threadId) {
 		const conversation = this.conversations.get(threadId);
@@ -19,22 +19,22 @@ export class MemoryService {
 			return null;
 		}
 
-		// 返回最后一个响应 ID
+		// Return the last response ID
 		const lastEntry = conversation.history[conversation.history.length - 1];
 		return lastEntry.responseId;
 	}
 
 	/**
-	 * 保存响应到对话历史
-	 * @param {string} threadId - 线程 ID
-	 * @param {string} responseId - 响应 ID
-	 * @param {string} query - 用户查询
-	 * @param {string} fileAnswer - 文件搜索答案
-	 * @param {string} webAnswer - 网络搜索答案
-	 * @param {Object} usage - Token 使用情况
+	 * Save response to conversation history
+	 * @param {string} threadId - Thread ID
+	 * @param {string} responseId - Response ID
+	 * @param {string} query - User query
+	 * @param {string} fileAnswer - File search answer
+	 * @param {string} webAnswer - Web search answer
+	 * @param {Object} usage - Token usage information
 	 */
 	saveResponse(threadId, responseId, query, fileAnswer, webAnswer, usage) {
-		// 如果该线程不存在，创建新的对话
+		// If thread doesn't exist, create new conversation
 		if (!this.conversations.has(threadId)) {
 			this.conversations.set(threadId, {
 				threadId,
@@ -46,7 +46,7 @@ export class MemoryService {
 
 		const conversation = this.conversations.get(threadId);
 
-		// 添加新的对话条目
+		// Add new conversation entry
 		conversation.history.push({
 			responseId,
 			query,
@@ -56,19 +56,19 @@ export class MemoryService {
 			timestamp: new Date().toISOString(),
 		});
 
-		// 更新最后修改时间
+		// Update last modified time
 		conversation.lastUpdated = new Date().toISOString();
 
 		console.log(
-			`💾 已保存对话记录 - Thread: ${threadId}, 总条目: ${conversation.history.length}`
+			`💾 Conversation saved - Thread: ${threadId}, Total entries: ${conversation.history.length}`
 		);
 	}
 
 	/**
-	 * 获取对话历史
-	 * @param {string} threadId - 线程 ID
-	 * @param {number} limit - 返回的最大条目数（默认所有）
-	 * @returns {Array} 对话历史
+	 * Get conversation history
+	 * @param {string} threadId - Thread ID
+	 * @param {number} limit - Maximum number of entries to return (default: all)
+	 * @returns {Array} Conversation history
 	 */
 	getHistory(threadId, limit = null) {
 		const conversation = this.conversations.get(threadId);
@@ -79,7 +79,7 @@ export class MemoryService {
 
 		let history = conversation.history;
 
-		// 如果指定了限制，返回最近的 N 条记录
+		// If limit specified, return the most recent N records
 		if (limit && limit > 0) {
 			history = history.slice(-limit);
 		}
@@ -94,9 +94,9 @@ export class MemoryService {
 	}
 
 	/**
-	 * 获取对话摘要信息
-	 * @param {string} threadId - 线程 ID
-	 * @returns {Object} 对话摘要
+	 * Get conversation summary information
+	 * @param {string} threadId - Thread ID
+	 * @returns {Object} Conversation summary
 	 */
 	getConversationSummary(threadId) {
 		const conversation = this.conversations.get(threadId);
@@ -108,7 +108,7 @@ export class MemoryService {
 			};
 		}
 
-		// 计算总 token 使用量
+		// Calculate total token usage
 		let totalInputTokens = 0;
 		let totalOutputTokens = 0;
 		let totalCost = 0;
@@ -137,30 +137,30 @@ export class MemoryService {
 	}
 
 	/**
-	 * 清除对话历史
-	 * @param {string} threadId - 线程 ID
-	 * @returns {boolean} 是否成功清除
+	 * Clear conversation history
+	 * @param {string} threadId - Thread ID
+	 * @returns {boolean} Whether clearing was successful
 	 */
 	clearHistory(threadId) {
 		if (this.conversations.has(threadId)) {
 			this.conversations.delete(threadId);
-			console.log(`🗑️ 已清除对话历史 - Thread: ${threadId}`);
+			console.log(`🗑️ Conversation history cleared - Thread: ${threadId}`);
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * 获取所有活跃的线程 ID
-	 * @returns {Array<string>} 线程 ID 列表
+	 * Get all active thread IDs
+	 * @returns {Array<string>} List of thread IDs
 	 */
 	getActiveThreads() {
 		return Array.from(this.conversations.keys());
 	}
 
 	/**
-	 * 获取对话统计信息
-	 * @returns {Object} 统计信息
+	 * Get conversation statistics
+	 * @returns {Object} Statistics information
 	 */
 	getStatistics() {
 		const threads = Array.from(this.conversations.values());
@@ -194,13 +194,13 @@ export class MemoryService {
 	}
 
 	/**
-	 * 清理旧的对话（基于时间）
-	 * @param {number} maxAgeHours - 最大保留时间（小时）
-	 * @returns {number} 清理的对话数量
+	 * Clean up old conversations (based on time)
+	 * @param {number} maxAgeHours - Maximum retention time (hours)
+	 * @returns {number} Number of conversations cleaned up
 	 */
 	cleanupOldConversations(maxAgeHours = 24) {
 		const now = new Date().getTime();
-		const maxAge = maxAgeHours * 60 * 60 * 1000; // 转换为毫秒
+		const maxAge = maxAgeHours * 60 * 60 * 1000; // Convert to milliseconds
 		let cleaned = 0;
 
 		for (const [threadId, conversation] of this.conversations.entries()) {
@@ -208,12 +208,12 @@ export class MemoryService {
 			if (now - lastUpdated > maxAge) {
 				this.conversations.delete(threadId);
 				cleaned++;
-				console.log(`🧹 清理旧对话 - Thread: ${threadId}`);
+				console.log(`🧹 Old conversation cleaned up - Thread: ${threadId}`);
 			}
 		}
 
 		if (cleaned > 0) {
-			console.log(`🧹 已清理 ${cleaned} 个旧对话`);
+			console.log(`🧹 Cleaned up ${cleaned} old conversations`);
 		}
 
 		return cleaned;
