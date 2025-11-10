@@ -52,6 +52,7 @@ router.post('/query', async (req, res) => {
 				webSearch: result.webSearch,
 				usage: result.usage, // LLM token usage
 				embeddingCost: result.embeddingCost, // Embedding token usage
+				responseTime: result.responseTime, // Response time in seconds
 				stats: {
 					freeCount: stats.free.count,
 					paidCount: stats.paid.count,

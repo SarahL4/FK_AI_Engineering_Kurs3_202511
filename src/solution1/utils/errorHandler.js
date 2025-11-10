@@ -1,5 +1,12 @@
 /**
- * Error Handler Class
+ * Error Handler Class - Solution 1
+ * Provides centralized error handling and standardized error responses
+ *
+ * Features:
+ * - OpenAI API error handling
+ * - Rate limit detection and retry logic
+ * - User-friendly error messages
+ * - Error type classification
  */
 export class ErrorHandler {
 	/**

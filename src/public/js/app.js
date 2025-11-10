@@ -13,6 +13,15 @@ const elements = {
 	submitBtn2: document.getElementById('submitBtn2'),
 	submitBtnBoth: document.getElementById('submitBtnBoth'),
 
+	// History controls
+	showHistoryBtn: document.getElementById('showHistoryBtn'),
+	clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+	hideHistoryBtn: document.getElementById('hideHistoryBtn'),
+	historyPanel: document.getElementById('historyPanel'),
+	historyContent: document.getElementById('historyContent'),
+	historyEmpty: document.getElementById('historyEmpty'),
+	totalCost: document.getElementById('totalCost'),
+
 	// Solution 1 container and elements
 	solution1Container: document.getElementById('solution1Container'),
 	fileSearchBlock1: document.getElementById('fileSearchBlock1'),
@@ -23,6 +32,7 @@ const elements = {
 	inputTokens1: document.getElementById('inputTokens1'),
 	outputTokens1: document.getElementById('outputTokens1'),
 	cost1: document.getElementById('cost1'),
+	responseTime1: document.getElementById('responseTime1'),
 	vectorStoreStatus1: document.getElementById('vectorStoreStatus1'),
 
 	// Solution 2 container and elements
@@ -38,6 +48,7 @@ const elements = {
 	inputTokens2: document.getElementById('inputTokens2'),
 	outputTokens2: document.getElementById('outputTokens2'),
 	cost2: document.getElementById('cost2'),
+	responseTime2: document.getElementById('responseTime2'),
 	embeddingUsage2: document.getElementById('embeddingUsage2'),
 	embeddingModel2: document.getElementById('embeddingModel2'),
 	embeddingTokens2: document.getElementById('embeddingTokens2'),
@@ -71,6 +82,172 @@ function formatMarkdown(text) {
 			/`(.*?)`/g,
 			'<code class="bg-gray-200 px-1 rounded text-xs">$1</code>'
 		);
+}
+
+function formatTimestamp(timestamp) {
+	const date = new Date(timestamp);
+	return date.toLocaleString('sv-SE', {
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+	});
+}
+
+// Load conversation history for Solution 1
+async function loadHistory1(displayInPanel = false) {
+	try {
+		const response = await fetch(`/api/solution1/history/${state.threadId1}`);
+		const data = await response.json();
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to load history');
+		}
+
+		if (data.success) {
+			if (displayInPanel) {
+				displayHistory(data);
+			}
+			updateTotalCost(data.summary?.totalUsage?.estimated_cost || 0);
+		}
+	} catch (error) {
+		console.error('❌ Failed to load history:', error);
+		if (displayInPanel) {
+			showError('Failed to load conversation history: ' + error.message);
+		}
+	}
+}
+
+// Display conversation history
+function displayHistory(data) {
+	const { history, summary } = data;
+
+	if (!history || history.length === 0) {
+		elements.historyContent.innerHTML = '';
+		elements.historyEmpty.classList.remove('hidden');
+		return;
+	}
+
+	elements.historyEmpty.classList.add('hidden');
+
+	// Create history items HTML
+	const historyHTML = history
+		.map(
+			(item, index) => `
+		<div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+			<div class="flex items-start justify-between mb-2">
+				<div class="flex items-center gap-2">
+					<span class="text-xs font-bold text-gray-500">#${index + 1}</span>
+					<span class="text-xs text-gray-500">${formatTimestamp(item.timestamp)}</span>
+				</div>
+				<div class="text-xs font-mono text-purple-700">
+					$${(item.usage?.estimated_cost || 0).toFixed(6)}
+				</div>
+			</div>
+			<div class="mb-3">
+				<div class="text-xs font-semibold text-gray-600 mb-1">❓ Question:</div>
+				<div class="text-sm text-gray-800 bg-white rounded p-2">
+					${formatMarkdown(item.query)}
+				</div>
+			</div>
+			<div class="grid md:grid-cols-2 gap-3">
+				<div>
+					<div class="text-xs font-semibold text-blue-600 mb-1">📄 File Answer:</div>
+					<div class="text-xs text-gray-700 bg-blue-50 rounded p-2 max-h-32 overflow-y-auto">
+						${formatMarkdown(item.fileAnswer)}
+					</div>
+				</div>
+				<div>
+					<div class="text-xs font-semibold text-green-600 mb-1">🌐 Web Answer:</div>
+					<div class="text-xs text-gray-700 bg-green-50 rounded p-2 max-h-32 overflow-y-auto">
+						${formatMarkdown(item.webAnswer)}
+					</div>
+				</div>
+			</div>
+			<div class="mt-2 flex gap-4 text-xs text-gray-500">
+				<span>📊 Input: ${item.usage?.input_tokens?.toLocaleString() || 0}</span>
+				<span>📊 Output: ${item.usage?.output_tokens?.toLocaleString() || 0}</span>
+				<span>📊 Total: ${item.usage?.total_tokens?.toLocaleString() || 0}</span>
+			</div>
+		</div>
+	`
+		)
+		.join('');
+
+	elements.historyContent.innerHTML = historyHTML;
+
+	// Add summary at the top
+	if (summary && summary.exists) {
+		const summaryHTML = `
+			<div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 mb-4 border-2 border-purple-200">
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+					<div>
+						<div class="text-xs text-gray-600">Messages</div>
+						<div class="font-bold text-purple-900">${summary.messageCount}</div>
+					</div>
+					<div>
+						<div class="text-xs text-gray-600">Total Tokens</div>
+						<div class="font-bold text-purple-900">${
+							summary.totalUsage?.total_tokens?.toLocaleString() || 0
+						}</div>
+					</div>
+					<div>
+						<div class="text-xs text-gray-600">Input Tokens</div>
+						<div class="font-bold text-purple-900">${
+							summary.totalUsage?.input_tokens?.toLocaleString() || 0
+						}</div>
+					</div>
+					<div>
+						<div class="text-xs text-gray-600">Total Cost</div>
+						<div class="font-bold text-purple-900">$${(
+							summary.totalUsage?.estimated_cost || 0
+						).toFixed(6)}</div>
+					</div>
+				</div>
+			</div>
+		`;
+		elements.historyContent.insertAdjacentHTML('afterbegin', summaryHTML);
+	}
+}
+
+// Update total cost display
+function updateTotalCost(cost) {
+	elements.totalCost.textContent = `$${(cost || 0).toFixed(6)}`;
+}
+
+// Clear conversation history
+async function clearHistory1() {
+	if (!confirm('Are you sure you want to clear all conversation history?')) {
+		return;
+	}
+
+	try {
+		const response = await fetch(`/api/solution1/history/${state.threadId1}`, {
+			method: 'DELETE',
+		});
+		const data = await response.json();
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to clear history');
+		}
+
+		if (data.success) {
+			elements.historyContent.innerHTML = '';
+			elements.historyEmpty.classList.remove('hidden');
+			updateTotalCost(0);
+			showMessage('✅ History cleared successfully!');
+		}
+	} catch (error) {
+		console.error('❌ Failed to clear history:', error);
+		showError('Failed to clear history: ' + error.message);
+	}
+}
+
+function showMessage(message) {
+	// Simple success message using alert (can be improved with toast notifications)
+	alert(message);
 }
 
 // Load Solution 1 configuration
@@ -185,9 +362,19 @@ async function querySolution1(query) {
 				elements.inputTokens1.textContent = `${data.usage.input_tokens.toLocaleString()}`;
 				elements.outputTokens1.textContent = `${data.usage.output_tokens.toLocaleString()}`;
 				elements.cost1.textContent = `$${data.usage.estimated_cost.toFixed(6)}`;
+				elements.responseTime1.textContent = `${
+					data.usage.response_time
+						? data.usage.response_time.toFixed(2) + 's'
+						: '-'
+				}`;
 			}
 
 			console.log('✅ Solution 1 query successful:', data);
+
+			// Update total cost in background
+			loadHistory1().then(() => {
+				console.log('📊 Total cost updated');
+			});
 		}
 	} catch (error) {
 		console.error('❌ Solution 1 query failed:', error);
@@ -318,6 +505,13 @@ async function querySolution2(query) {
 				elements.outputTokens2.textContent =
 					resultData.usage.outputTokens || '-';
 				elements.cost2.textContent = resultData.usage.cost || '$0.00';
+			}
+
+			// Show response time
+			if (resultData.responseTime) {
+				elements.responseTime2.textContent = `${resultData.responseTime.toFixed(
+					2
+				)}s`;
 			}
 
 			// Show embedding token usage if available (OpenAI Embeddings)
@@ -485,6 +679,20 @@ elements.queryInput.addEventListener('input', (e) => {
 	} else {
 		charCountEl.className = 'text-xs text-gray-500 mt-1';
 	}
+});
+
+// History controls event listeners
+elements.showHistoryBtn.addEventListener('click', async () => {
+	elements.historyPanel.classList.remove('hidden');
+	await loadHistory1(true);
+});
+
+elements.hideHistoryBtn.addEventListener('click', () => {
+	elements.historyPanel.classList.add('hidden');
+});
+
+elements.clearHistoryBtn.addEventListener('click', async () => {
+	await clearHistory1();
 });
 
 // Initialize

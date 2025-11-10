@@ -3,7 +3,7 @@ create extension if not exists vector;
 
 -- Create a table to store your documents (使用 embeddings 表名以匹配代码)
 create table if not exists embeddings (
-  id bigserial primary key,
+  id uuid primary key default gen_random_uuid(),
   content text, -- corresponds to Document.pageContent
   metadata jsonb, -- corresponds to Document.metadata
   embedding vector(1536) -- 1536 works for OpenAI embeddings, change if needed
@@ -15,7 +15,7 @@ create or replace function match_embeddings (
   match_count int DEFAULT null,
   filter jsonb DEFAULT '{}'
 ) returns table (
-  id bigint,
+  id uuid,
   content text,
   metadata jsonb,
   embedding jsonb,

@@ -1,5 +1,13 @@
+import { Logger } from '../../shared/utils/logger.js';
+
 /**
- * Memory Service - Manage conversation history and context
+ * Memory Service - Solution 1
+ * Manages conversation history and context in-memory
+ *
+ * Features:
+ * - Thread-based conversation tracking
+ * - Token usage statistics
+ * - Automatic cleanup of old conversations
  */
 export class MemoryService {
 	constructor() {
@@ -59,8 +67,8 @@ export class MemoryService {
 		// Update last modified time
 		conversation.lastUpdated = new Date().toISOString();
 
-		console.log(
-			`💾 Conversation saved - Thread: ${threadId}, Total entries: ${conversation.history.length}`
+		Logger.info(
+			`Conversation saved - Thread: ${threadId}, Total entries: ${conversation.history.length}`
 		);
 	}
 
@@ -144,7 +152,7 @@ export class MemoryService {
 	clearHistory(threadId) {
 		if (this.conversations.has(threadId)) {
 			this.conversations.delete(threadId);
-			console.log(`🗑️ Conversation history cleared - Thread: ${threadId}`);
+			Logger.info(`Conversation history cleared - Thread: ${threadId}`);
 			return true;
 		}
 		return false;
@@ -208,12 +216,12 @@ export class MemoryService {
 			if (now - lastUpdated > maxAge) {
 				this.conversations.delete(threadId);
 				cleaned++;
-				console.log(`🧹 Old conversation cleaned up - Thread: ${threadId}`);
+				Logger.info(`Old conversation cleaned up - Thread: ${threadId}`);
 			}
 		}
 
 		if (cleaned > 0) {
-			console.log(`🧹 Cleaned up ${cleaned} old conversations`);
+			Logger.info(`Cleaned up ${cleaned} old conversations`);
 		}
 
 		return cleaned;

@@ -5,7 +5,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * File Service - Retrieve Vector Store information
+ * File Service - Solution 1
+ * Manages OpenAI Vector Store operations
+ *
+ * IMPORTANT: Vector Store is created ONCE by running: npm run init:vectorstore
+ * This service only retrieves and manages the existing Vector Store
  */
 export class FileService {
 	constructor() {
@@ -82,7 +86,7 @@ export class FileService {
 	async deleteVectorStore(vectorStoreId) {
 		try {
 			await this.client.vectorStores.del(vectorStoreId);
-			console.log(`🗑️ Vector Store deleted: ${vectorStoreId}`);
+			Logger.info(`Vector Store deleted: ${vectorStoreId}`);
 			return {
 				success: true,
 				message: 'Vector Store deleted successfully',

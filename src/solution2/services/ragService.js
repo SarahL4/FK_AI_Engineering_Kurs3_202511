@@ -1,5 +1,4 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { TavilySearchResults } from '@langchain/community/tools/tavily_search';
@@ -9,7 +8,7 @@ import { OPENAI_MODELS } from '../../shared/config/constants.js';
 
 /**
  * RAG Service - Retrieval Augmented Generation
- * Uses chains instead of agent for more direct control
+ * Uses OpenAI cheapest model (gpt-4o-mini) for stable performance
  */
 class RAGService {
 	constructor() {
@@ -23,46 +22,46 @@ class RAGService {
 	}
 
 	/**
-	 * Initialize LLM and tools
+	 * Initialize OpenAI LLM and tools
+	 * Runs ONCE per server session - subsequent queries reuse initialized resources
 	 */
 	async initialize() {
 		if (this.isInitialized) {
+			console.log('✅ RAG Service already initialized (cached)');
 			return;
 		}
 
 		try {
 			console.log('🚀 Initializing RAG Service...');
 
-			// Initialize Gemini as primary LLM (free)
-			this.geminiLLM = new ChatGoogleGenerativeAI({
-				modelName: 'gemini-2.0-flash-exp',
-				temperature: 0,
-				apiKey: process.env.GOOGLE_API_KEY,
-			});
-
-			// Initialize OpenAI as fallback
-			this.openaiLLM = new ChatOpenAI({
+			// Initialize OpenAI LLM (cheapest model: gpt-4o-mini)
+			this.llm = new ChatOpenAI({
 				model: OPENAI_MODELS.CHEAPEST,
 				temperature: 0,
 				apiKey: process.env.OPENAI_API_KEY,
 			});
+			console.log('✅ OpenAI LLM initialized (gpt-4o-mini)');
 
-			// Set default to Gemini
-			this.llm = this.geminiLLM;
-
-			// Initialize Tavily search (reduced to 2 for speed)
+			// Initialize Tavily web search
 			this.tavilySearch = new TavilySearchResults({
 				maxResults: 2,
 				apiKey: process.env.TAVILY_API_KEY,
 			});
+			console.log('✅ Tavily search initialized');
 
-			// Ensure PDF service is initialized
+			// Connect to existing Supabase vector store (NO upload/embedding)
 			if (!pdfService.isInitialized) {
+				console.log('📄 Connecting to Supabase vector store...');
 				await pdfService.loadDefaultPDF();
+				console.log(
+					'✅ Vector store connected (using pre-existing embeddings)'
+				);
 			}
 
 			this.isInitialized = true;
-			console.log('✅ RAG Service initialized');
+			console.log(
+				'✅ RAG Service ready - all subsequent queries will be fast!'
+			);
 		} catch (error) {
 			console.error('❌ RAG Service initialization failed:', error);
 			throw ErrorHandler.handle(error, { context: 'RAG initialization' });
@@ -131,13 +130,18 @@ class RAGService {
 	}
 
 	/**
-	 * Generate answer using RAG chain (similar to your code example)
+	 * Generate answer using OpenAI LLM with retrieved context
 	 */
 	async generateAnswer(query, fileSearchResults) {
 		try {
-			console.log(`🤖 Generating answer with LLM...`);
+			console.log('🤖 Generating answer with OpenAI...');
 
-			// Create prompt template (simplified and optimized for accuracy)
+			// Prepare context from retrieved documents
+			const context = fileSearchResults.documents
+				.map((doc) => doc.content)
+				.join('\n\n');
+
+			// Create prompt template
 			const answerTemplate = PromptTemplate.fromTemplate(
 				`Svara på följande fråga baserat ENDAST på den tillhandahållna kontexten:
 
@@ -149,67 +153,36 @@ Fråga: {question}
 Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett och tydligt svar.`
 			);
 
-			// Prepare context from file search results
-			const context = fileSearchResults.documents
-				.map((doc) => doc.content)
-				.join('\n\n');
-
-			// Create chain
+			// Create and invoke chain
 			const chain = answerTemplate
 				.pipe(this.llm)
 				.pipe(new StringOutputParser());
 
-			let answer;
-			let usedModel = 'gemini-2.0-flash-exp';
-			let cost = 'free';
-			let fallback = false;
-			let usage = null;
+			const answer = await chain.invoke({
+				context: context,
+				question: query,
+			});
 
-			try {
-				// Try Gemini first
-				this.llm = this.geminiLLM;
-				const response = await chain.invoke({
-					context: context,
-					question: query,
-				});
-				answer = response;
-				this.usageCounts.free++;
-			} catch (error) {
-				// Fallback to OpenAI
-				console.warn(
-					'⚠️ Gemini failed, falling back to OpenAI:',
-					error.message
-				);
-				this.llm = this.openaiLLM;
-				const response = await chain.invoke({
-					context: context,
-					question: query,
-				});
-				answer = response;
-				usedModel = OPENAI_MODELS.CHEAPEST;
-				cost = 'paid';
-				fallback = true;
-				this.usageCounts.paid++;
+			// Calculate token usage and cost
+			const inputTokens = Math.ceil(context.length / 4);
+			const outputTokens = Math.ceil(answer.length / 4);
+			const estimatedCost = (inputTokens * 0.15 + outputTokens * 0.6) / 1000000;
 
-				// Calculate approximate token usage for OpenAI
-				const inputTokens = Math.ceil(context.length / 4); // Rough estimate: 1 token ≈ 4 chars
-				const outputTokens = Math.ceil(answer.length / 4);
-				const estimatedCost =
-					(inputTokens * 0.15 + outputTokens * 0.6) / 1000000; // gpt-4o-mini pricing
+			// Update usage stats
+			this.usageCounts.paid++;
 
-				usage = {
-					inputTokens,
-					outputTokens,
-					cost: `$${estimatedCost.toFixed(6)}`,
-				};
-			}
+			console.log('✅ Answer generated with OpenAI (gpt-4o-mini)');
 
 			return {
 				answer,
-				usedModel,
-				cost,
-				fallback,
-				usage,
+				usedModel: OPENAI_MODELS.CHEAPEST,
+				cost: 'paid',
+				fallback: false,
+				usage: {
+					inputTokens,
+					outputTokens,
+					cost: `$${estimatedCost.toFixed(6)}`,
+				},
 			};
 		} catch (error) {
 			console.error('❌ Answer generation failed:', error);
@@ -222,6 +195,9 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 	 */
 	async query(query) {
 		try {
+			// Start time tracking
+			const startTime = Date.now();
+
 			if (!this.isInitialized) {
 				await this.initialize();
 			}
@@ -237,9 +213,14 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 			// Generate answer using RAG chain based on file search
 			const answerResult = await this.generateAnswer(query, fileSearchResults);
 
+			// Calculate response time
+			const endTime = Date.now();
+			const responseTime = (endTime - startTime) / 1000; // Convert to seconds
+
 			console.log(
 				`✅ Query completed using model: ${answerResult.usedModel} (${answerResult.cost})`
 			);
+			console.log(`⏱️ Response time: ${responseTime.toFixed(2)}s`);
 
 			const result = {
 				fileSearchWithLLM: {
@@ -258,6 +239,7 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 				},
 				usage: answerResult.usage, // LLM token usage info
 				embeddingCost: fileSearchResults.embeddingCost, // Embedding cost info
+				responseTime: responseTime, // Add response time in seconds
 			};
 
 			console.log(
@@ -278,11 +260,11 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 		return {
 			free: {
 				count: this.usageCounts.free,
-				model: 'gemini-2.0-flash-exp',
+				model: 'N/A (not using free models)',
 			},
 			paid: {
 				count: this.usageCounts.paid,
-				model: OPENAI_MODELS.CHEAPEST,
+				model: OPENAI_MODELS.CHEAPEST + ' (OpenAI)',
 			},
 		};
 	}

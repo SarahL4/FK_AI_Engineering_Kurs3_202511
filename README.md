@@ -1,18 +1,122 @@
-# Försäkringskassan AI Assistant - Solution 1: OpenAI Agent SDK
+# Försäkringskassan AI Assistant
 
-An intelligent Q&A system based on OpenAI Responses API and Agent SDK, designed to answer questions about Swedish föräldrarpenning (parental allowance) and barn (children).
+An intelligent Q&A system that helps answer questions about Swedish parental benefits and children's allowances. The system uses AI to search both uploaded documents and the web to provide accurate answers.
+
+## 🎯 Two Solutions Available
+
+This project offers **two different implementations** to choose from:
+
+### Quick Comparison
+
+| Feature                 | Solution 1 (OpenAI)    | Solution 2 (Supabase)     |
+| ----------------------- | ---------------------- | ------------------------- |
+| **Setup Difficulty**    | ⭐ Easy (5 min)        | ⭐⭐ Moderate (15 min)    |
+| **Storage**             | OpenAI Cloud           | Your Supabase Database    |
+| **AI Model**            | GPT-4o-mini            | GPT-4o-mini or free mode  |
+| **Cost (1000 queries)** | ~$0.14                 | ~$0.10 (or less) or free  |
+| **Free Tier**           | ❌ No                  | ✅ Yes (Supabase)         |
+| **Data Control**        | OpenAI manages         | You control               |
+| **Web Search**          | ✅ Built-in            | ⚠️ Not yet implemented    |
+| **Best For**            | Beginners, quick start | Cost savings, scalability |
+
+### Which Should You Choose?
+
+**Choose Solution 1 (OpenAI) if:**
+
+- ✅ You're new to coding and want the easiest setup
+- ✅ You want everything in one place (OpenAI handles all)
+- ✅ You need web search functionality
+- ✅ Setup time matters more than cost (~5 minutes)
+- ✅ You don't want to manage a database
+
+**Choose Solution 2 (Supabase) if:**
+
+- ✅ You want to minimize costs (Supabase free tier!)
+- ✅ You want control over where your data is stored
+- ✅ You're comfortable with a bit more setup (~15 minutes)
+- ✅ You plan to scale or add features later
+- ✅ You want to learn modern tech (Langchain, vector databases)
+
+---
+
+## 🚀 Quick Start - Solution 1 (OpenAI)
+
+**New to coding?** Start with Solution 1 - it's easier!
+
+1. **Install Node.js**: Download from [nodejs.org](https://nodejs.org/)
+2. **Get OpenAI API Key**: Sign up at [platform.openai.com](https://platform.openai.com/)
+3. **Setup Project**:
+   ```bash
+   npm install
+   ```
+4. **Create `.env` file** and add your API key
+5. **Upload PDF**:
+   ```bash
+   npm run init:vectorstore
+   ```
+6. **Copy the `VECTOR_STORE_ID`** to your `.env` file
+7. **Start app**:
+   ```bash
+   npm run dev
+   ```
+8. **Open browser**: Go to `http://localhost:3000`
+
+## 🚀 Quick Start - Solution 2 (Supabase)
+
+**Want lower costs and open source?** Choose Solution 2!
+
+1. **Install Node.js**: Download from [nodejs.org](https://nodejs.org/)
+2. **Create Supabase Account**: Sign up at [supabase.com](https://supabase.com) (Free!)
+3. **Get API Keys**:
+   - OpenAI API Key from [platform.openai.com](https://platform.openai.com/)
+   - Supabase URL and API Key from your project settings
+4. **Setup Project**:
+   ```bash
+   npm install
+   ```
+5. **Create `.env` file** with Supabase credentials
+6. **Setup Database**: Run the SQL script in Supabase dashboard
+7. **Upload PDF**:
+   ```bash
+   npm run init:supabase
+   ```
+8. **Start app**:
+   ```bash
+   npm run dev:solution2
+   ```
+9. **Open browser**: Go to `http://localhost:3000`
+
+📖 **Need more details?** Keep reading below!
 
 ## ✨ Features
 
-- 📄 **Pre-loaded PDF**: PDF document pre-uploaded to OpenAI Vector Store for instant access
-- 🔍 **File Search**: Uses OpenAI's file_search tool to search information in the uploaded document
-- 🌐 **Web Search**: Uses OpenAI's built-in web_search_preview tool for real-time web searches
-- 💾 **Conversation Memory**: Automatically maintains conversation context for more accurate answers
-- 💰 **Cost Optimized**: Uses gpt-4o-mini (OpenAI's cheapest model)
-- 📊 **Usage Statistics**: Real-time display of token usage and estimated costs
-- 🎨 **Modern UI**: Responsive interface built with Tailwind CSS
+- 📄 **Document Search**: Searches through pre-uploaded PDF documents instantly
+- 🌐 **Web Search**: Gets real-time information from the internet
+- 💬 **Smart Conversations**: Remembers previous questions for better context
+- 💰 **Cost Efficient**: Uses OpenAI's most affordable model (gpt-4o-mini)
+- 📊 **Usage Tracking**: Shows how much each query costs
+- 🎨 **Modern Interface**: Clean and responsive design
 
-## 🚀 Quick Start
+## 📋 Prerequisites
+
+### For Both Solutions
+
+- **Node.js** (version 14 or higher) - [Download here](https://nodejs.org/)
+- **OpenAI API Key** - [Get one here](https://platform.openai.com/api-keys)
+  - You'll need to add payment method to your OpenAI account
+  - Free trial credits may be available for new users
+- **Basic Command Line Knowledge** - Ability to run commands in terminal/command prompt
+- **Text Editor** - Any code editor (VS Code, Notepad++, etc.)
+
+### Additional for Solution 2 (Supabase)
+
+- **Supabase Account** - [Sign up free here](https://supabase.com)
+  - Free tier includes 500MB database + 2GB file storage
+  - No credit card required for free tier
+
+---
+
+## 🚀 Detailed Setup Guide - Solution 1 (OpenAI)
 
 ### 1. Install Dependencies
 
@@ -20,263 +124,357 @@ An intelligent Q&A system based on OpenAI Responses API and Agent SDK, designed 
 npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Create Configuration File
 
-Create a `.env` file (refer to `.env.example`):
+Create a new file named `.env` in the project root folder:
+
+**On Windows:**
+
+```bash
+copy .env.example .env
+```
+
+**On Mac/Linux:**
+
+```bash
+cp .env.example .env
+```
+
+**Or manually create `.env` file with this content:**
 
 ```env
-# OpenAI API Key (Required)
-OPENAI_API_KEY=your_openai_api_key_here
+# Your OpenAI API Key (Get from https://platform.openai.com/api-keys)
+OPENAI_API_KEY=sk-proj-xxxx
 
-# Vector Store ID (Required - generated in step 3)
-VECTOR_STORE_ID=your_vector_store_id_here
+# Vector Store ID (Will be generated in Step 3)
+VECTOR_STORE_ID=
 
-# Server Configuration (Optional)
+# Optional Settings (Can leave as default)
 PORT=3000
 NODE_ENV=development
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### 3. Initialize Vector Store (First Time Only)
+⚠️ **Important**: Replace `sk-proj-xxxx` with your actual OpenAI API key!
 
-Upload the PDF document to OpenAI Vector Store:
+### 3. Upload PDF to OpenAI (One-time Setup)
+
+This step uploads your PDF document to OpenAI's cloud storage:
 
 ```bash
 npm run init:vectorstore
 ```
 
-This will:
+**What happens:**
 
-- Upload `src/assets/FK.pdf` to OpenAI
-- Create a Vector Store
-- Attach the file to the Vector Store
-- Output a `VECTOR_STORE_ID` that you need to add to your `.env` file
+1. The system uploads `src/assets/FK.pdf` to OpenAI
+2. Creates a storage space (Vector Store) for the document
+3. Processes the document for AI search
+4. Generates a unique ID
 
-**Important**: Copy the `VECTOR_STORE_ID` from the output and add it to your `.env` file.
+**After running the command:**
 
-### 4. Start the Server
+1. Look for a line that says: `Vector Store ID: vs_xxxxxxxxxxxxx`
+2. Copy this ID
+3. Open your `.env` file
+4. Paste the ID after `VECTOR_STORE_ID=`
+5. Save the file
 
-```bash
-# Development mode (with hot reload)
-npm run dev
+**Example:**
 
-# Production mode
-npm start
+```env
+VECTOR_STORE_ID=vs_abc123xyz456
 ```
 
-### 5. Access the Application
+💡 **Tip**: You only need to do this ONCE unless you want to update the PDF.
 
-Open your browser and visit: [http://localhost:3000](http://localhost:3000)
+### 4. Start the Application
 
-## 📖 Usage Guide
+```bash
+npm run dev
+```
 
-### Ask Questions
+If everything is set up correctly, you should see:
 
-1. Open the application in your browser
-2. The Vector Store is automatically loaded on page load
-3. Enter your question in the text box
+```
+Server running on http://localhost:3000
+```
+
+### 5. Open in Browser
+
+1. Open your web browser (Chrome, Firefox, Safari, etc.)
+2. Go to: **http://localhost:3000**
+3. You should see the Försäkringskassan AI Assistant interface
+
+🎉 **Congratulations! Your app is now running!**
+
+---
+
+## 🚀 Detailed Setup Guide - Solution 2 (Supabase)
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Create Supabase Project
+
+1. **Go to** [supabase.com](https://supabase.com) and sign up (it's free!)
+2. **Click** "New Project"
+3. **Fill in** project details:
+   - Project name: `fk-assistant` (or any name you like)
+   - Database password: Choose a strong password (save it!)
+   - Region: Choose closest to you
+4. **Wait** 1-2 minutes for project to be created
+
+### 3. Setup Database Tables
+
+1. **In your Supabase dashboard**, click "SQL Editor" from the left menu
+2. **Click** "New Query"
+3. **Copy and paste** the SQL code from `supabase/sql-setup.sql` file, or copy this code:
+
+```sql
+-- Enable the pgvector extension to work with embedding vectors
+create extension if not exists vector;
+
+-- Create a table to store your documents (使用 embeddings 表名以匹配代码)
+create table if not exists embeddings (
+  id bigserial primary key,
+  content text, -- corresponds to Document.pageContent
+  metadata jsonb, -- corresponds to Document.metadata
+  embedding vector(1536) -- 1536 works for OpenAI embeddings, change if needed
+);
+
+-- Create a function to search for documents (使用 match_embeddings 函数名以匹配代码)
+create or replace function match_embeddings (
+  query_embedding vector(1536),
+  match_count int DEFAULT null,
+  filter jsonb DEFAULT '{}'
+) returns table (
+  id bigint,
+  content text,
+  metadata jsonb,
+  embedding jsonb,
+  similarity float
+)
+language plpgsql
+as $$
+#variable_conflict use_column
+begin
+  return query
+  select
+    id,
+    content,
+    metadata,
+    (embedding::text)::jsonb as embedding,
+    1 - (embeddings.embedding <=> query_embedding) as similarity
+  from embeddings
+  where metadata @> filter
+  order by embeddings.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
+```
+
+4. **Click** "Run" button
+5. **You should see**: "Success. No rows returned"
+
+**What this script does:**
+
+- Enables the `pgvector` extension for storing and searching vector embeddings
+- Creates an `embeddings` table to store your PDF content chunks
+- Creates a `match_embeddings` function for similarity search
+
+### 4. Get Supabase Credentials
+
+1. **Click** "Settings" (gear icon) in the left menu
+2. **Click** "API" under Project Settings
+3. **Copy** these two values:
+   - **Project URL** (looks like: `https://xxxxx.supabase.co`)
+   - **Project API Key** (anon/public key)
+
+### 5. Create Configuration File
+
+Create a new file named `.env` in the project root folder with this content:
+
+```env
+# OpenAI API Key (for embeddings and AI responses)
+OPENAI_API_KEY=sk-proj-xxxx
+
+# Supabase Credentials
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_API_KEY=your_anon_key_here
+
+# Optional Settings
+PORT=3000
+NODE_ENV=development
+```
+
+⚠️ **Important**: Replace all values with your actual credentials!
+
+### 6. Upload PDF to Supabase
+
+Run this command to process and upload the PDF:
+
+```bash
+npm run init:supabase
+```
+
+**What happens:**
+
+1. Loads your PDF (`src/assets/FK.pdf`)
+2. Splits it into smaller chunks (for better search)
+3. Creates embeddings (vector representations) using OpenAI
+4. Uploads everything to your Supabase database
+5. Tests the search to make sure it works
+
+**This will take 1-3 minutes** depending on PDF size.
+
+**You should see:**
+
+```
+🚀 Initializing Supabase Vector Store
+✅ Connected to Supabase
+✅ PDF loaded: X pages
+✅ Created X chunks
+✅ Embeddings initialized
+✅ Documents uploaded successfully!
+🎉 Initialization completed successfully!
+```
+
+💡 **Tip**: You only need to do this ONCE unless you want to update the PDF.
+
+### 7. Start the Application
+
+```bash
+npm run dev:solution2
+```
+
+If everything is set up correctly, you should see:
+
+```
+Server running on http://localhost:3000
+Solution 2 (Supabase) is active
+```
+
+### 8. Open in Browser
+
+1. Open your web browser (Chrome, Firefox, Safari, etc.)
+2. Go to: **http://localhost:3000**
+3. You should see the Försäkringskassan AI Assistant interface
+
+🎉 **Congratulations! Solution 2 is now running!**
+
+### 💰 Cost Comparison (Solution 2)
+
+**Supabase costs:**
+
+- Free tier: 500MB database, 2GB file storage, 2GB bandwidth
+- For this app: **FREE** for typical use (< 1000 documents)
+
+**OpenAI costs (only for embeddings):**
+
+- One-time embedding cost: ~$0.002-0.01 (depending on PDF size)
+- Per query: ~$0.0001-0.0003
+
+**Total estimated cost:** < $0.10/month for personal use!
+
+---
+
+## 📖 How to Use
+
+### Asking Questions
+
+1. **Type your question** in the text box on the page
    - Example: "Hur många dagar med föräldrapenning kan man få?"
-4. Click "Submit Question and Search"
-5. The system will simultaneously execute:
-   - **File Search**: Searches for relevant information in the pre-loaded PDF
-   - **Web Search**: Searches the internet for the latest information
+   - Example: "Om jag har två barn, hur mycket får barnbidrag?"
+2. **Click "Submit Question and Search"**
 
-### View Results
+3. **Wait a few seconds** - The AI will:
 
-- View both file search and web search results side by side
-- Check token usage statistics and estimated costs
-- Browse conversation history
-- Clear conversation history if needed
+   - Search through the uploaded PDF document
+   - Search the web for latest information
+   - Combine both results to give you an answer
 
-### Sample Questions
+4. **View the results**:
+   - Answer from the PDF document
+   - Answer from web search
+   - Cost information (how much the query cost)
+
+### Additional Features
+
+- **Conversation History**: Previous questions and answers are remembered
+- **Clear History**: Click "Clear History" button to start fresh
+- **Cost Tracking**: See real-time token usage and costs
+
+### Example Questions
 
 ```
 Hur många dagar med föräldrapenning kan man få?
 Om jag har två barn, hur mycket får barnbidrag?
 Vad är reglerna för föräldraledighet?
+Kan man dela föräldrapenning mellan föräldrar?
 ```
 
 ## 🏗️ Project Structure
 
+Understanding the main folders and files:
+
 ```
-FK_JL_Kurs3_202511/
-├── scripts/
-│   └── init-vector-store.js       # Vector Store initialization script
+project-folder/
 ├── src/
-│   ├── solution1/                 # Solution 1: OpenAI implementation
-│   │   ├── services/
-│   │   │   ├── fileService.js      # Vector Store configuration service
-│   │   │   ├── responseService.js  # Query response service
-│   │   │   └── memoryService.js    # Memory management service
-│   │   ├── routes/
-│   │   │   └── api.js             # API routes
-│   │   └── utils/
-│   │       └── errorHandler.js    # Error handling
-│   ├── shared/
-│   │   ├── config/
-│   │   │   └── constants.js       # Configuration constants
-│   │   └── utils/
-│   │       ├── logger.js          # Logging utility
-│   │       └── validators.js      # Input validation
-│   ├── public/                    # Frontend files
-│   │   ├── index.html
-│   │   ├── css/
-│   │   │   └── custom.css
-│   │   └── js/
-│   │       └── app.js
-│   └── assets/                    # Static assets
-│       └── FK.pdf                 # Pre-loaded PDF document
-├── server.js                      # Express server
-├── package.json
-├── .env                          # Environment variables (create this)
-└── .env.example                  # Environment variables template
+│   ├── assets/
+│   │   └── FK.pdf                 # 📄 Your PDF document
+│   ├── public/
+│   │   ├── index.html             # 🌐 Web interface
+│   │   ├── css/                   # 🎨 Styles
+│   │   └── js/                    # ⚙️ Frontend logic
+│   └── solution1/
+│       ├── services/              # 🔧 Backend logic
+│       └── routes/                # 🛣️ API endpoints
+├── scripts/
+│   └── init-vector-store.js       # 📤 PDF upload script
+├── server.js                      # 🖥️ Main server file
+├── package.json                   # 📦 Dependencies list
+├── .env                          # 🔐 Your configuration (create this!)
+└── .env.example                  # 📋 Configuration template
 ```
 
-## 🔌 API Endpoints
+**Key files you might need to modify:**
 
-### Get Configuration
-
-```http
-GET /api/solution1/config
-
-Response:
-{
-  "success": true,
-  "vectorStoreId": "vs_...",
-  "vectorStoreInfo": {
-    "id": "vs_...",
-    "name": "FK",
-    "file_counts": {
-      "completed": 1,
-      "in_progress": 0,
-      "failed": 0
-    },
-    "created_at": 1234567890
-  }
-}
-```
-
-### Query
-
-```http
-POST /api/solution1/query
-Content-Type: application/json
-
-Body:
-{
-  "query": "Hur många dagar med föräldrapenning kan man få?",
-  "threadId": "user-session-123"
-}
-
-Response:
-{
-  "success": true,
-  "fileAnswer": "Du kan få föräldrapenning i upp till 480 dagar för ett barn...",
-  "webAnswer": "According to the latest information...",
-  "model": "gpt-4o-mini",
-  "fileResponseId": "resp_...",
-  "webResponseId": "resp_...",
-  "usage": {
-    "input_tokens": 150,
-    "output_tokens": 200,
-    "total_tokens": 350,
-    "estimated_cost": 0.000142
-  },
-  "timestamp": "2025-11-09T12:34:56.789Z"
-}
-```
-
-### Get Conversation History
-
-```http
-GET /api/solution1/history/:threadId?limit=10
-
-Response:
-{
-  "success": true,
-  "threadId": "user-session-123",
-  "summary": {
-    "exists": true,
-    "messageCount": 5,
-    "totalUsage": {
-      "total_tokens": 1750,
-      "estimated_cost": 0.00071
-    }
-  },
-  "history": [
-    {
-      "query": "Hur många dagar...",
-      "fileAnswer": "...",
-      "webAnswer": "...",
-      "timestamp": "2025-11-09T12:34:56.789Z",
-      "usage": { ... }
-    }
-  ]
-}
-```
-
-### Clear Conversation History
-
-```http
-DELETE /api/solution1/history/:threadId
-
-Response:
-{
-  "success": true,
-  "message": "History cleared successfully"
-}
-```
-
-### Get Vector Store Information
-
-```http
-GET /api/solution1/vector-store/:vectorStoreId
-
-Response:
-{
-  "success": true,
-  "id": "vs_...",
-  "name": "FK",
-  "file_counts": {
-    "completed": 1
-  },
-  "created_at": 1234567890
-}
-```
-
-### Get Statistics
-
-```http
-GET /api/solution1/statistics
-
-Response:
-{
-  "success": true,
-  "statistics": {
-    "totalThreads": 5,
-    "totalQueries": 25,
-    "totalTokens": 8750,
-    "estimatedTotalCost": 0.00357
-  }
-}
-```
+- `.env` - Your API keys and settings
+- `src/assets/FK.pdf` - Replace with your own PDF
+- `src/public/index.html` - Customize the web interface
 
 ## 💰 Cost Information
 
-Using **gpt-4o-mini** model (OpenAI's cheapest option):
+This app uses OpenAI's **gpt-4o-mini** - their most affordable AI model.
 
-- Input: $0.15 / 1M tokens
-- Output: $0.60 / 1M tokens
+### Pricing (as of 2025)
 
-Example costs:
+- **Input**: $0.15 per million tokens (~750,000 words)
+- **Output**: $0.60 per million tokens (~750,000 words)
 
-- A typical query (150 input + 200 output tokens) ≈ $0.00014
-- 100 queries ≈ $0.014
-- 1,000 queries ≈ $0.14
+### Real-world Costs
 
-**One-time costs:**
+**Per Query:**
 
-- Initial Vector Store creation and file upload: ~$0.001-0.01 (depending on PDF size)
+- Simple question: ~$0.0001 - $0.0003 (less than 1 cent!)
+- Complex question: ~$0.0005 - $0.001
+
+**Bulk Usage:**
+
+- 100 questions: ~$0.01 - $0.05
+- 1,000 questions: ~$0.10 - $0.50
+
+**One-time Setup:**
+
+- Uploading PDF: ~$0.001 - $0.01 (depending on PDF size)
+
+💡 **Bottom line**: Very affordable for personal or educational use. Even heavy use typically costs less than $1/month.
+
+⚠️ **Tip**: Set a usage limit in your OpenAI dashboard to avoid unexpected charges.
 
 ## 🧪 Testing
 
@@ -320,116 +518,265 @@ Example costs:
   - [ ] Displays user-friendly error messages
   - [ ] Shows appropriate error for rate limits
 
-## ⚠️ Important Notes
+## ⚠️ Important Things to Know
 
-1. **API Key Security**:
+### 🔐 Keep Your API Key Safe
 
-   - Never commit `.env` file to Git
-   - Don't expose API keys in frontend code
-   - Use environment variables for sensitive information
-   - `.env` is already in `.gitignore`
+- **Never share** your `.env` file or API key with anyone
+- **Don't commit** `.env` to Git (it's already in `.gitignore`)
+- **Regenerate your key** if you accidentally expose it
 
-2. **Cost Control**:
+### 💰 Control Your Costs
 
-   - Regularly check OpenAI usage
-   - Set API usage limits in OpenAI dashboard
-   - Consider implementing query rate limiting
-   - Monitor token usage statistics
+- **Set spending limits** in OpenAI dashboard to prevent surprises
+- **Monitor usage** at [platform.openai.com/usage](https://platform.openai.com/usage)
+- The app shows estimated costs after each query
+- Typical usage is very cheap (< $1/month for personal use)
 
-3. **Vector Store Management**:
+### 📦 Document Storage
 
-   - Vector Store is persistent - no need to recreate it
-   - Only run `init:vectorstore` once or when updating the PDF
-   - VECTOR_STORE_ID remains valid until explicitly deleted
-   - Old Vector Stores should be deleted to avoid unnecessary charges
+**Solution 1 (OpenAI Vector Store):**
 
-4. **Web Search**:
+- **Upload once**: Your PDF stays in OpenAI's storage - no need to re-upload
+- **Persistent**: The `VECTOR_STORE_ID` works until you delete it
+- **Update PDF**: Run `npm run init:vectorstore` again to upload a new version
+- **Cleanup**: Delete old Vector Stores in OpenAI dashboard to avoid storage fees
 
-   - Uses OpenAI's built-in `web_search_preview` tool
-   - No additional API keys required
-   - May have slightly higher token costs than file search only
+**Solution 2 (Supabase):**
 
-5. **PDF Updates**:
-   - To update the PDF document, run `npm run init:vectorstore` again
-   - Update the VECTOR_STORE_ID in `.env` with the new ID
-   - Consider deleting the old Vector Store via OpenAI dashboard
+- **Upload once**: Embeddings are stored in your Supabase database
+- **Free tier**: 500MB database storage (enough for many PDFs)
+- **Update PDF**: Run `npm run init:supabase` again (will add new chunks)
+- **Cleanup**: You can delete rows from the `embeddings` table in Supabase dashboard
 
-## 🔧 Troubleshooting
+### 🌐 Web Search Feature
 
-### Server Won't Start
+- Works automatically - no extra setup needed
+- Uses OpenAI's built-in web search
+- Slightly more expensive than document-only search
+- Provides up-to-date information from the internet
 
-```
-Error: OPENAI_API_KEY environment variable is missing
-```
+## ❓ Frequently Asked Questions (FAQ)
 
-**Solution**: Ensure `.env` file exists and contains a valid OPENAI_API_KEY
+### Q: Which solution should I choose?
 
-### Vector Store Not Configured
+**A:**
 
-```
-Error: VECTOR_STORE_ID not configured in environment variables
-```
+- **Choose Solution 1 (OpenAI)** if you're a beginner or want the easiest setup. It takes ~5 minutes to set up.
+- **Choose Solution 2 (Supabase)** if you want lower costs, more control over your data, or plan to scale. Setup takes ~15 minutes but saves money long-term.
 
-**Solution**:
+### Q: Can I switch between solutions later?
 
-1. Run `npm run init:vectorstore`
-2. Copy the generated VECTOR_STORE_ID
-3. Add it to your `.env` file
-4. Restart the server
+**A:** Yes! Both solutions are independent. You can set up both and switch by using different start commands (`npm run dev` vs `npm run dev:solution2`).
 
-### Initialization Failed
+### Q: What's the main difference between Solution 1 and 2?
 
-```
-Error: File processing timeout
-```
+**A:**
 
-**Solution**:
+- **Solution 1**: Uses OpenAI's cloud storage (Vector Store). Everything happens in OpenAI's ecosystem. Easier but slightly more expensive.
+- **Solution 2**: Uses your own Supabase database. You control the data. More setup but cheaper (Supabase has a free tier).
 
-- Check your internet connection
-- Ensure the PDF file exists at `src/assets/FK.pdf`
-- Verify your OpenAI API key is valid
-- Check OpenAI API quota
+### Q: Do I need to know how to code?
 
-### Query Failed
+**A:** Not really! Just follow the Quick Start Guide step by step. You only need to run a few commands in the terminal.
 
-```
-Error: Rate limit exceeded
-```
+### Q: How much does each solution cost?
 
-**Solution**:
+**A:**
 
-- Wait a few minutes before retrying
-- Check OpenAI API limits in your dashboard
-- Consider upgrading your API plan
+- **Solution 1**: ~$0.14 per 1000 queries (OpenAI charges for storage + queries)
+- **Solution 2**: ~$0.10 per 1000 queries or less (Supabase free tier + only OpenAI embeddings)
 
-### Configuration Load Failed
+### Q: Where is my data stored?
 
-```
-Error: Failed to get config
-```
+**A:** Depends on which solution you use:
 
-**Solution**:
+- **Solution 1**: PDF is stored in OpenAI's cloud (Vector Store)
+- **Solution 2**: PDF embeddings are stored in your Supabase database (you control it!)
 
-- Verify VECTOR_STORE_ID is correctly set in `.env`
-- Check that the Vector Store still exists in OpenAI
-- Restart the server after updating `.env`
+Both: Conversations are temporary and handled by the app.
 
-## 📚 Tech Stack
+### Q: Can I use my own PDF document?
 
-- **Backend**: Node.js, Express
-- **Frontend**: HTML, Tailwind CSS, Vanilla JavaScript
-- **AI Service**: OpenAI Responses API, gpt-4o-mini
-- **Tools**:
-  - OpenAI file_search (Vector Store)
-  - OpenAI web_search_preview
-- **Environment**: dotenv
-- **Vector Storage**: OpenAI Vector Store (persistent)
+**A:** Yes! Replace `src/assets/FK.pdf` with your PDF, then run:
+
+- **Solution 1**: `npm run init:vectorstore`
+- **Solution 2**: `npm run init:supabase`
+
+### Q: Do I need to upload the PDF every time I start the app?
+
+**A:** No! Upload once, and it stays in the cloud:
+
+- **Solution 1**: Run `npm run init:vectorstore` once, then just `npm run dev`
+- **Solution 2**: Run `npm run init:supabase` once, then just `npm run dev:solution2`
+
+### Q: Can I use this without internet?
+
+**A:** No, you need internet because it connects to OpenAI's servers for AI processing and web search.
+
+### Q: Is this secure? Can others see my questions?
+
+**A:** Your questions go to OpenAI's servers (just like ChatGPT). OpenAI doesn't use your data to train models if you're using the API. Don't share your API key with anyone.
+
+### Q: What happens if I lose my VECTOR_STORE_ID?
+
+**A:** Check your `.env` file first. If you lost it, you can find it in your OpenAI dashboard under "Storage" or run `npm run init:vectorstore` again to create a new one.
+
+### Q: Can multiple people use this at the same time?
+
+**A:** Yes, but they all use the same OpenAI API key, so costs will be shared on your account.
+
+## 🔧 Common Problems & Solutions
+
+### ❌ Problem: "Cannot find module" or "npm: command not found"
+
+**Solution**: You need to install Node.js first
+
+1. Go to [nodejs.org](https://nodejs.org/)
+2. Download and install the LTS version
+3. Restart your terminal/command prompt
+4. Try again
+
+### ❌ Problem: "OPENAI_API_KEY environment variable is missing"
+
+**Solution**: Your `.env` file is missing or incorrect
+
+1. Make sure you have a `.env` file in the project root folder
+2. Open it and check that it has: `OPENAI_API_KEY=sk-proj-xxxxx`
+3. Replace `sk-proj-xxxxx` with your actual API key
+4. Save the file and restart the server
+
+### ❌ Problem: "VECTOR_STORE_ID not configured" (Solution 1)
+
+**Solution**: You need to upload the PDF first
+
+1. Run: `npm run init:vectorstore`
+2. Wait for it to finish (may take 30-60 seconds)
+3. Copy the `vs_xxxxx` ID from the output
+4. Open `.env` file
+5. Add: `VECTOR_STORE_ID=vs_xxxxx` (your actual ID)
+6. Save and restart: `npm run dev`
+
+### ❌ Problem: "Missing SUPABASE_URL or SUPABASE_API_KEY" (Solution 2)
+
+**Solution**: Your Supabase credentials are missing
+
+1. Make sure you have a `.env` file in the project root
+2. Add these lines:
+   ```env
+   SUPABASE_URL=https://xxxxx.supabase.co
+   SUPABASE_API_KEY=your_anon_key_here
+   ```
+3. Get your credentials from Supabase dashboard:
+   - Go to Settings → API
+   - Copy "Project URL" and "anon/public key"
+4. Save and restart the server
+
+### ❌ Problem: "relation 'embeddings' does not exist" (Solution 2)
+
+**Solution**: You haven't run the SQL setup script
+
+1. Go to your Supabase dashboard
+2. Click "SQL Editor" from the left menu
+3. Copy and paste the SQL script from the [Solution 2 Setup Guide](#3-setup-database-tables)
+4. Click "Run"
+5. Wait for "Success" message
+6. Try running `npm run init:supabase` again
+
+### ❌ Problem: "Port 3000 is already in use"
+
+**Solution**: Another program is using port 3000
+
+- **Option 1**: Stop the other program and try again
+- **Option 2**: Use a different port:
+  1. Open `.env` file
+  2. Change `PORT=3000` to `PORT=3001` (or any other number)
+  3. Save and restart
+  4. Access at: `http://localhost:3001`
+
+### ❌ Problem: "Rate limit exceeded" or "Quota exceeded"
+
+**Solution**: You've hit OpenAI's usage limits
+
+1. Wait 1-2 minutes and try again
+2. Check your OpenAI account at [platform.openai.com](https://platform.openai.com/)
+3. Verify you have:
+   - A payment method added
+   - Available credits or budget
+4. You may need to add funds or upgrade your plan
+
+### ❌ Problem: Server starts but page shows "Cannot connect"
+
+**Solution**: Check your browser URL
+
+1. Make sure you're going to: `http://localhost:3000` (not https)
+2. Try refreshing the page (F5)
+3. Try a different browser
+4. Check if the server is really running (should say "Server running on...")
+
+### ❌ Problem: PDF upload takes forever or times out
+
+**Solution**: Network or file size issue
+
+1. Check your internet connection
+2. Make sure `src/assets/FK.pdf` exists and is not too large (< 50MB)
+3. Try again - sometimes OpenAI servers are busy
+4. Wait a few minutes between retries
+
+### 💡 Still Having Problems?
+
+1. **Check the terminal/console** for error messages
+2. **Restart everything**:
+   ```bash
+   # Stop the server (Ctrl+C)
+   # Then restart
+   npm run dev
+   ```
+3. **Start fresh**:
+   ```bash
+   # Delete node_modules folder
+   # Then reinstall
+   npm install
+   npm run dev
+   ```
+
+## 📚 Technologies Used
+
+**For Beginners**: Here's what powers this application
+
+### Solution 1 (OpenAI)
+
+- **Node.js** - JavaScript runtime that runs the server
+- **Express** - Web framework that handles requests
+- **OpenAI API** - The AI brain that answers questions
+  - Uses `gpt-4o-mini` model (affordable and fast)
+  - `file_search` tool for searching PDFs
+  - `web_search_preview` tool for internet searches
+  - Vector Store for document storage
+- **HTML/CSS/JavaScript** - Standard web technologies for the interface
+- **Tailwind CSS** - Makes the UI look modern and responsive
+
+**Storage:** Everything is stored in OpenAI's cloud (Vector Store)
+
+### Solution 2 (Supabase)
+
+- **Node.js** - JavaScript runtime that runs the server
+- **Express** - Web framework that handles requests
+- **Langchain** - Framework for building AI applications
+- **Supabase** - Open-source database (PostgreSQL) with vector support
+  - pgvector extension for similarity search
+  - Free tier available!
+- **OpenAI Embeddings** - Converts text to vectors for search
+- **HTML/CSS/JavaScript** - Standard web technologies for the interface
+- **Tailwind CSS** - Makes the UI look modern and responsive
+
+**Storage:** PDF embeddings stored in your Supabase database (you control the data!)
 
 ## 🚧 Future Improvements
 
-- [ ] Implement Solution 2: Langchain Agent (using free Google Gemini)
+- [x] ✅ Implement Solution 2: Supabase vector storage with Langchain
+- [ ] Add Google Gemini as alternative AI model
 - [ ] Add user authentication
-- [ ] Implement Supabase vector storage option
 - [ ] Support for multiple PDF documents
 - [ ] Implement query rate limiting
 - [ ] Add unit tests and integration tests
@@ -437,37 +784,4 @@ Error: Failed to get config
 - [ ] Deploy to production (Vercel/Netlify/Railway)
 - [ ] Add PDF update UI for admins
 - [ ] Implement vector store cleanup utility
-
-## 📋 Available Scripts
-
-- `npm start` - Start the server in production mode
-- `npm run dev` - Start the server in development mode with hot reload
-- `npm run init:vectorstore` - Initialize and upload PDF to Vector Store
-- `npm test` - Run tests (not yet implemented)
-
-## 📝 License
-
-ISC
-
-## 👤 Author
-
-JL - Kurs 3 - 2025/11
-
----
-
-## 🔄 Migration from Upload-based System
-
-If you're migrating from the previous version where users uploaded PDFs:
-
-1. Run `npm run init:vectorstore` to create the Vector Store
-2. Add VECTOR_STORE_ID to your `.env` file
-3. Restart the server
-4. The PDF is now pre-loaded and ready for queries
-
-**Benefits of the new system:**
-
-- ✅ Faster user experience (no upload wait time)
-- ✅ Reduced API costs (upload only once)
-- ✅ Simpler user interface
-- ✅ More reliable (no upload failures)
-- ✅ Persistent storage
+- [ ] Add comparison dashboard between Solution 1 and 2

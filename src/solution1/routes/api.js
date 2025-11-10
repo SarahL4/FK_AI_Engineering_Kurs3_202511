@@ -4,10 +4,11 @@ import { ResponseService } from '../services/responseService.js';
 import { MemoryService } from '../services/memoryService.js';
 import { Validators } from '../../shared/utils/validators.js';
 import { ErrorHandler } from '../utils/errorHandler.js';
+import { Logger } from '../../shared/utils/logger.js';
 
 const router = express.Router();
 
-// Initialize services
+// Initialize services (singleton instances)
 const fileService = new FileService();
 const responseService = new ResponseService();
 const memoryService = new MemoryService();
@@ -27,7 +28,7 @@ router.get('/config', async (req, res) => {
 			vectorStoreInfo: info,
 		});
 	} catch (error) {
-		console.error('Failed to get config:', error);
+		Logger.error('Failed to get config:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getConfig',
 		});
@@ -69,7 +70,7 @@ router.post('/query', async (req, res) => {
 		const sanitizedQuery = Validators.sanitizeQuery(query);
 		const finalThreadId = threadId || 'default';
 
-		console.log(`📝 Processing query request - Thread: ${finalThreadId}`);
+		Logger.info(`Processing query request - Thread: ${finalThreadId}`);
 
 		// Get previous response ID (for conversation context)
 		const previousResponseId =
@@ -94,7 +95,7 @@ router.post('/query', async (req, res) => {
 
 		res.json(result);
 	} catch (error) {
-		console.error('Query failed:', error);
+		Logger.error('Query failed:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'query',
 			query: req.body.query,
@@ -134,7 +135,7 @@ router.get('/history/:threadId', (req, res) => {
 			history,
 		});
 	} catch (error) {
-		console.error('Failed to get history:', error);
+		Logger.error('Failed to get history:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getHistory',
 			threadId: req.params.threadId,
@@ -168,7 +169,7 @@ router.delete('/history/:threadId', (req, res) => {
 				: 'No history found for this thread',
 		});
 	} catch (error) {
-		console.error('Failed to clear history:', error);
+		Logger.error('Failed to clear history:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'clearHistory',
 			threadId: req.params.threadId,
@@ -189,7 +190,7 @@ router.get('/statistics', (req, res) => {
 			statistics: stats,
 		});
 	} catch (error) {
-		console.error('Failed to get statistics:', error);
+		Logger.error('Failed to get statistics:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getStatistics',
 		});
@@ -216,7 +217,7 @@ router.get('/vector-store/:vectorStoreId', async (req, res) => {
 		const info = await fileService.getVectorStoreInfo(vectorStoreId);
 		res.json(info);
 	} catch (error) {
-		console.error('Failed to get Vector Store info:', error);
+		Logger.error('Failed to get Vector Store info:', error);
 		const errorResponse = ErrorHandler.handle(error, {
 			operation: 'getVectorStoreInfo',
 			vectorStoreId: req.params.vectorStoreId,

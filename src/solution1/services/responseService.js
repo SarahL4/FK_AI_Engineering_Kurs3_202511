@@ -6,7 +6,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * Response Service - Handle file search and web search
+ * Response Service - Solution 1
+ * Handles file search (via OpenAI Vector Store) and web search
+ *
+ * Features:
+ * - Uses OpenAI's file_search tool for PDF querying
+ * - Uses OpenAI's web_search_preview tool for web searches
+ * - Parallel execution for faster responses
+ * - Response time tracking
  */
 export class ResponseService {
 	constructor() {
@@ -24,6 +31,9 @@ export class ResponseService {
 	 */
 	async query(query, vectorStoreId, previousResponseId = null) {
 		try {
+			// Start time tracking
+			const startTime = Date.now();
+
 			Logger.info(
 				`[Solution 1] Using OpenAI's cheapest model: ${OPENAI_MODELS.CHEAPEST}`
 			);
@@ -34,6 +44,10 @@ export class ResponseService {
 				this.fileSearch(query, vectorStoreId, previousResponseId),
 				this.webSearch(query),
 			]);
+
+			// Calculate response time
+			const endTime = Date.now();
+			const responseTime = (endTime - startTime) / 1000; // Convert to seconds
 
 			// Calculate total token usage
 			const totalInputTokens =
@@ -47,7 +61,7 @@ export class ResponseService {
 			const outputCost = (totalOutputTokens / 1000000) * 0.6;
 			const totalCost = inputCost + outputCost;
 
-			// Log cost using Logger
+			// Log cost and time using Logger
 			Logger.cost(
 				OPENAI_MODELS.CHEAPEST,
 				{
@@ -57,6 +71,7 @@ export class ResponseService {
 				},
 				totalCost
 			);
+			Logger.info(`⏱️ Response time: ${responseTime.toFixed(2)}s`);
 
 			return {
 				success: true,
@@ -70,11 +85,12 @@ export class ResponseService {
 					output_tokens: totalOutputTokens,
 					total_tokens: totalInputTokens + totalOutputTokens,
 					estimated_cost: totalCost,
+					response_time: responseTime,
 				},
 				timestamp: new Date().toISOString(),
 			};
 		} catch (error) {
-			console.error('❌ Query failed:', error);
+			Logger.error('Query failed:', error);
 			throw ErrorHandler.handle(error, {
 				operation: 'query',
 				query,
@@ -92,10 +108,10 @@ export class ResponseService {
 	 */
 	async fileSearch(query, vectorStoreId, previousResponseId = null) {
 		try {
-			console.log(`🔍 Executing file search...`);
+			Logger.info('Executing file search...');
 
 			const requestConfig = {
-				model: OPENAI_MODELS.CHEAPEST, // gpt-4o-mini
+				model: OPENAI_MODELS.CHEAPEST,
 				input: query,
 				tools: [
 					{
@@ -103,21 +119,20 @@ export class ResponseService {
 						vector_store_ids: [vectorStoreId],
 					},
 				],
-				store: true, // Store response for future use
+				store: true, // Store response for conversation context
 			};
 
-			// If previous response ID exists, add it to config to maintain conversation context
+			// Add previous response ID if exists (for conversation continuity)
 			if (previousResponseId) {
 				requestConfig.previous_response_id = previousResponseId;
 			}
 
 			const response = await this.client.responses.create(requestConfig);
-
-			console.log(`✅ File search completed`);
+			Logger.info('File search completed');
 
 			return response;
 		} catch (error) {
-			console.error('❌ File search failed:', error);
+			Logger.error('File search failed:', error);
 			throw error;
 		}
 	}
@@ -129,10 +144,10 @@ export class ResponseService {
 	 */
 	async webSearch(query) {
 		try {
-			console.log(`🌐 Executing web search...`);
+			Logger.info('Executing web search...');
 
 			const response = await this.client.responses.create({
-				model: OPENAI_MODELS.CHEAPEST, // gpt-4o-mini
+				model: OPENAI_MODELS.CHEAPEST,
 				input: query,
 				tools: [
 					{
@@ -141,11 +156,11 @@ export class ResponseService {
 				],
 			});
 
-			console.log(`✅ Web search completed`);
+			Logger.info('Web search completed');
 
 			return response;
 		} catch (error) {
-			console.error('❌ Web search failed:', error);
+			Logger.error('Web search failed:', error);
 			throw error;
 		}
 	}
@@ -159,10 +174,7 @@ export class ResponseService {
 	 */
 	async fileSearchOnly(query, vectorStoreId, previousResponseId = null) {
 		try {
-			console.log(
-				`💰 [Solution 1] Using OpenAI's cheapest model: ${OPENAI_MODELS.CHEAPEST}`
-			);
-			console.log(`📝 Query (file search only): ${query}`);
+			Logger.info(`Query (file search only): ${query}`);
 
 			const response = await this.fileSearch(
 				query,
@@ -175,18 +187,8 @@ export class ResponseService {
 			const outputCost = (response.usage.output_tokens / 1000000) * 0.6;
 			const totalCost = inputCost + outputCost;
 
-			console.log(`📊 Token usage statistics:`);
-			console.log(
-				`   Input: ${
-					response.usage.input_tokens
-				} tokens (approx. $${inputCost.toFixed(6)})`
-			);
-			console.log(
-				`   Output: ${
-					response.usage.output_tokens
-				} tokens (approx. $${outputCost.toFixed(6)})`
-			);
-			console.log(`   Total cost: approx. $${totalCost.toFixed(6)}`);
+			// Log token usage and cost
+			Logger.cost(OPENAI_MODELS.CHEAPEST, response.usage, totalCost);
 
 			return {
 				success: true,
@@ -203,7 +205,7 @@ export class ResponseService {
 				timestamp: new Date().toISOString(),
 			};
 		} catch (error) {
-			console.error('❌ File search failed:', error);
+			Logger.error('File search failed:', error);
 			throw ErrorHandler.handle(error, {
 				operation: 'fileSearchOnly',
 				query,

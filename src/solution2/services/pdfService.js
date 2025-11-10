@@ -1,8 +1,5 @@
-import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { ErrorHandler } from '../utils/errorHandler.js';
 import path from 'path';
@@ -13,7 +10,8 @@ const __dirname = path.dirname(__filename);
 
 /**
  * PDF Service Class
- * Handles PDF document loading, splitting, and vectorization
+ * Connects to existing Supabase vector store (PDF already uploaded via init script)
+ * NO re-uploading or re-embedding - connects to pre-processed data
  */
 class PDFService {
 	constructor() {
@@ -21,7 +19,6 @@ class PDFService {
 		this.embeddings = null;
 		this.supabaseClient = null;
 		this.isInitialized = false;
-		this.usingPaidEmbeddings = false;
 	}
 
 	/**
@@ -45,58 +42,87 @@ class PDFService {
 	}
 
 	/**
-	 * Initialize embeddings (using OpenAI directly to save time)
+	 * Check if PDF data exists in Supabase
+	 * Similar to Solution 1's VECTOR_STORE_ID check
+	 */
+	async checkSupabaseDataExists() {
+		try {
+			const supabaseClient = this.initializeSupabase();
+
+			// Check if embeddings table has data
+			const { data, error, count } = await supabaseClient
+				.from('embeddings')
+				.select('id', { count: 'exact', head: true })
+				.limit(1);
+
+			if (error) {
+				console.error('❌ Error checking Supabase data:', error);
+				return false;
+			}
+
+			const hasData = count > 0;
+			console.log(
+				`📊 Supabase embeddings table: ${
+					hasData ? `✅ Has ${count} records` : '❌ Empty'
+				}`
+			);
+
+			return hasData;
+		} catch (error) {
+			console.error('❌ Failed to check Supabase data:', error);
+			return false;
+		}
+	}
+
+	/**
+	 * Initialize OpenAI embeddings (cheapest model)
+	 * IMPORTANT: This only creates embedding for search queries, NOT for uploading PDF
+	 * PDF embedding is done ONCE by init-supabase-vector.js script
 	 */
 	async initializeEmbeddings() {
 		if (!this.embeddings) {
-			// Gemini Embeddings quota exceeded - directly use OpenAI to save time
-			/* 
-			try {
-				// Try Google Gemini's free embeddings first
-				const geminiEmbeddings = new GoogleGenerativeAIEmbeddings({
-					modelName: 'models/embedding-001',
-					apiKey: process.env.GOOGLE_API_KEY,
-				});
-
-				// Test if Gemini embeddings work
-				await geminiEmbeddings.embedQuery('test');
-				this.embeddings = geminiEmbeddings;
-				this.usingPaidEmbeddings = false;
-				console.log('✅ [Free] Using Google Gemini Embeddings');
-			} catch (error) {
-				console.warn(
-					'⚠️  Gemini Embeddings unavailable, falling back to OpenAI:',
-					error.message
-				);
-			*/
-			// Directly use OpenAI embeddings (faster, no quota issues)
 			this.embeddings = new OpenAIEmbeddings({
 				modelName: 'text-embedding-3-small', // Cheapest OpenAI embedding
 				apiKey: process.env.OPENAI_API_KEY,
 			});
-			this.usingPaidEmbeddings = true;
-			console.log('✅ [Paid] Using OpenAI Embeddings (text-embedding-3-small)');
-			// }
+			console.log('✅ Using OpenAI Embeddings (text-embedding-3-small)');
 		}
 		return this.embeddings;
 	}
 
 	/**
-	 * Load PDF file and create vector store (now uses Supabase)
-	 * @param {string} pdfPath - PDF file path (legacy parameter, kept for compatibility)
+	 * Connect to existing Supabase vector store
+	 * IMPORTANT: PDF is already uploaded via init-supabase-vector.js script
+	 * This method ONLY connects to existing data - NO re-uploading or re-embedding
+	 *
+	 * @param {string} pdfPath - Legacy parameter (not used, kept for compatibility)
 	 * @returns {Promise<SupabaseVectorStore>}
 	 */
 	async loadPDF(pdfPath) {
 		try {
-			console.log(`📄 Connecting to Supabase vector store...`);
+			// Return cached vector store if already connected
+			if (this.isInitialized && this.vectorStore) {
+				console.log('✅ Using cached vector store connection');
+				return this.vectorStore;
+			}
 
-			// Initialize Supabase client
+			console.log('📄 Connecting to Supabase vector store...');
+
+			// Check if PDF data exists in Supabase
+			const hasData = await this.checkSupabaseDataExists();
+			if (!hasData) {
+				throw new Error(
+					'❌ No embeddings found in Supabase!\n' +
+						'📝 Please run: npm run init:supabase\n' +
+						'💡 This uploads the PDF ONCE, then you can query unlimited times!'
+				);
+			}
+
+			// Initialize Supabase client and embeddings
 			const supabaseClient = this.initializeSupabase();
-
-			// Initialize embeddings (with fallback)
 			const embeddings = await this.initializeEmbeddings();
 
-			// Connect to existing Supabase vector store
+			// Connect to EXISTING vector store (no upload/embedding happens here)
 			this.vectorStore = await SupabaseVectorStore.fromExistingIndex(
 				embeddings,
 				{
@@ -107,29 +133,8 @@ class PDFService {
 			);
 
 			this.isInitialized = true;
-
 			console.log('✅ Connected to Supabase vector store successfully');
-			console.log(
-				`💰 Embedding cost: ${
-					this.usingPaidEmbeddings ? 'Paid (OpenAI)' : 'Free (Gemini)'
-				}`
-			);
-
-			// ========== COMMENTED OUT: Old MemoryVectorStore method ==========
-			// const loader = new PDFLoader(pdfPath);
-			// const docs = await loader.load();
-			// console.log(`✅ PDF loaded successfully, ${docs.length} pages`);
-			// const textSplitter = new RecursiveCharacterTextSplitter({
-			// 	chunkSize: 1000,
-			// 	chunkOverlap: 200,
-			// });
-			// const chunks = await textSplitter.splitDocuments(docs);
-			// console.log(`✅ Text splitting completed, ${chunks.length} chunks`);
-			// this.vectorStore = await MemoryVectorStore.fromDocuments(
-			// 	chunks,
-			// 	embeddings
-			// );
-			// ==================================================================
+			console.log('⚡ Ready for queries - using pre-existing embeddings!');
 
 			return this.vectorStore;
 		} catch (error) {
@@ -157,10 +162,12 @@ class PDFService {
 	}
 
 	/**
-	 * Search for relevant documents
+	 * Search for relevant documents using OpenAI embeddings
+	 * IMPORTANT: This creates embeddings ONLY for the search query, NOT for PDF content
+	 *
 	 * @param {string} query - Search query
 	 * @param {number} k - Number of results to return
-	 * @returns {Promise<Object>} - Returns object with content, raw documents, and embedding cost
+	 * @returns {Promise<Object>} - Returns documents and embedding cost info
 	 */
 	async search(query, k = 4) {
 		try {
@@ -168,27 +175,15 @@ class PDFService {
 			const retriever = vectorStore.asRetriever({ k });
 			const docs = await retriever.invoke(query);
 
-			// Calculate embedding cost (only for paid OpenAI embeddings)
-			console.log(
-				'🔍 search() - usingPaidEmbeddings:',
-				this.usingPaidEmbeddings
-			);
-			let embeddingCost = null;
-			if (this.usingPaidEmbeddings) {
-				// text-embedding-3-small pricing: $0.020 / 1M tokens
-				const queryTokens = Math.ceil(query.length / 4); // Rough estimate: 1 token ≈ 4 chars
-				const estimatedCost = (queryTokens * 0.02) / 1000000;
-				embeddingCost = {
-					tokens: queryTokens,
-					cost: `$${estimatedCost.toFixed(6)}`,
-					model: 'text-embedding-3-small',
-				};
-				console.log('✅ Embedding cost calculated:', embeddingCost);
-			} else {
-				console.log('⚠️ Using free embeddings, no cost to calculate');
-			}
+			// Calculate embedding cost for query (OpenAI text-embedding-3-small)
+			const queryTokens = Math.ceil(query.length / 4); // Rough estimate: 1 token ≈ 4 chars
+			const estimatedCost = (queryTokens * 0.02) / 1000000; // $0.020 / 1M tokens
+			const embeddingCost = {
+				tokens: queryTokens,
+				cost: `$${estimatedCost.toFixed(6)}`,
+				model: 'text-embedding-3-small',
+			};
 
-			// Return both formatted content and raw docs for display
 			return {
 				content: docs.map((doc) => doc.pageContent).join('\n\n'),
 				documents: docs.map((doc, index) => ({
@@ -197,7 +192,7 @@ class PDFService {
 					metadata: doc.metadata,
 					source: doc.metadata?.source || 'FK.pdf',
 				})),
-				embeddingCost, // Add embedding cost info
+				embeddingCost,
 			};
 		} catch (error) {
 			console.error('❌ Search failed:', error);
@@ -211,11 +206,8 @@ class PDFService {
 	getEmbeddingInfo() {
 		return {
 			initialized: this.isInitialized,
-			usingPaid: this.usingPaidEmbeddings,
-			provider: this.usingPaidEmbeddings ? 'OpenAI' : 'Google Gemini',
-			model: this.usingPaidEmbeddings
-				? 'text-embedding-3-small'
-				: 'models/embedding-001',
+			provider: 'OpenAI',
+			model: 'text-embedding-3-small',
 		};
 	}
 }
