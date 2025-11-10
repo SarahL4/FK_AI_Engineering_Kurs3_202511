@@ -4,6 +4,8 @@ const state = {
 	threadId1: 'openai-session-' + Date.now(),
 	threadId2: 'langchain-session-' + Date.now(),
 	isQuerying: false,
+	lastUsedSolution: null, // Track which solution was last used for history display
+	currentHistorySolution: 'solution1', // Track which solution's history is currently displayed
 };
 
 // DOM elements
@@ -18,9 +20,12 @@ const elements = {
 	clearHistoryBtn: document.getElementById('clearHistoryBtn'),
 	hideHistoryBtn: document.getElementById('hideHistoryBtn'),
 	historyPanel: document.getElementById('historyPanel'),
+	historyTitle: document.getElementById('historyTitle'),
 	historyContent: document.getElementById('historyContent'),
 	historyEmpty: document.getElementById('historyEmpty'),
 	totalCost: document.getElementById('totalCost'),
+	switchToSolution1History: document.getElementById('switchToSolution1History'),
+	switchToSolution2History: document.getElementById('switchToSolution2History'),
 
 	// Solution 1 container and elements
 	solution1Container: document.getElementById('solution1Container'),
@@ -42,17 +47,12 @@ const elements = {
 	fileAnswer2: document.getElementById('fileAnswer2'),
 	webAnswer2: document.getElementById('webAnswer2'),
 	modelBadge2: document.getElementById('modelBadge2'),
-	freeLLMCount: document.getElementById('freeLLMCount'),
-	paidLLMCount: document.getElementById('paidLLMCount'),
+	solution2Model: document.getElementById('solution2Model'),
 	tokenUsage2: document.getElementById('tokenUsage2'),
 	inputTokens2: document.getElementById('inputTokens2'),
 	outputTokens2: document.getElementById('outputTokens2'),
 	cost2: document.getElementById('cost2'),
 	responseTime2: document.getElementById('responseTime2'),
-	embeddingUsage2: document.getElementById('embeddingUsage2'),
-	embeddingModel2: document.getElementById('embeddingModel2'),
-	embeddingTokens2: document.getElementById('embeddingTokens2'),
-	embeddingCostValue2: document.getElementById('embeddingCostValue2'),
 
 	loadingOverlay: document.getElementById('loadingOverlay'),
 	loadingText: document.getElementById('loadingText'),
@@ -108,7 +108,7 @@ async function loadHistory1(displayInPanel = false) {
 
 		if (data.success) {
 			if (displayInPanel) {
-				displayHistory(data);
+				displayHistory(data, 'solution1');
 			}
 			updateTotalCost(data.summary?.totalUsage?.estimated_cost || 0);
 		}
@@ -120,9 +120,40 @@ async function loadHistory1(displayInPanel = false) {
 	}
 }
 
+// Update history title and button states
+function updateHistoryUI(solution) {
+	state.currentHistorySolution = solution;
+
+	// Update title
+	const solutionName = solution === 'solution1' ? 'Solution 1' : 'Solution 2';
+	elements.historyTitle.textContent = `📜 Conversation History (${solutionName})`;
+
+	// Update button states
+	if (solution === 'solution1') {
+		elements.switchToSolution1History.classList.add('bg-white/40', 'font-bold');
+		elements.switchToSolution1History.classList.remove('bg-white/20');
+		elements.switchToSolution2History.classList.remove(
+			'bg-white/40',
+			'font-bold'
+		);
+		elements.switchToSolution2History.classList.add('bg-white/20');
+	} else {
+		elements.switchToSolution2History.classList.add('bg-white/40', 'font-bold');
+		elements.switchToSolution2History.classList.remove('bg-white/20');
+		elements.switchToSolution1History.classList.remove(
+			'bg-white/40',
+			'font-bold'
+		);
+		elements.switchToSolution1History.classList.add('bg-white/20');
+	}
+}
+
 // Display conversation history
-function displayHistory(data) {
+function displayHistory(data, solution) {
 	const { history, summary } = data;
+
+	// Update UI to reflect current solution
+	updateHistoryUI(solution);
 
 	if (!history || history.length === 0) {
 		elements.historyContent.innerHTML = '';
@@ -143,7 +174,13 @@ function displayHistory(data) {
 					<span class="text-xs text-gray-500">${formatTimestamp(item.timestamp)}</span>
 				</div>
 				<div class="text-xs font-mono text-purple-700">
-					$${(item.usage?.estimated_cost || 0).toFixed(6)}
+					$${(
+						(typeof item.usage?.cost === 'string'
+							? parseFloat(item.usage.cost.replace('$', ''))
+							: item.usage?.cost) ||
+						item.usage?.estimated_cost ||
+						0
+					).toFixed(6)}
 				</div>
 			</div>
 			<div class="mb-3">
@@ -167,9 +204,20 @@ function displayHistory(data) {
 				</div>
 			</div>
 			<div class="mt-2 flex gap-4 text-xs text-gray-500">
-				<span>📊 Input: ${item.usage?.input_tokens?.toLocaleString() || 0}</span>
-				<span>📊 Output: ${item.usage?.output_tokens?.toLocaleString() || 0}</span>
-				<span>📊 Total: ${item.usage?.total_tokens?.toLocaleString() || 0}</span>
+				<span>📊 Input: ${(
+					item.usage?.input_tokens ||
+					item.usage?.inputTokens ||
+					0
+				).toLocaleString()}</span>
+				<span>📊 Output: ${(
+					item.usage?.output_tokens ||
+					item.usage?.outputTokens ||
+					0
+				).toLocaleString()}</span>
+				<span>📊 Total: ${(
+					(item.usage?.input_tokens || item.usage?.inputTokens || 0) +
+					(item.usage?.output_tokens || item.usage?.outputTokens || 0)
+				).toLocaleString()}</span>
 			</div>
 		</div>
 	`
@@ -237,6 +285,10 @@ async function clearHistory1() {
 			elements.historyContent.innerHTML = '';
 			elements.historyEmpty.classList.remove('hidden');
 			updateTotalCost(0);
+			// Reload history to show empty state
+			if (!elements.historyPanel.classList.contains('hidden')) {
+				await loadHistory1(true);
+			}
 			showMessage('✅ History cleared successfully!');
 		}
 	} catch (error) {
@@ -248,6 +300,62 @@ async function clearHistory1() {
 function showMessage(message) {
 	// Simple success message using alert (can be improved with toast notifications)
 	alert(message);
+}
+
+// Load Solution 2 conversation history
+async function loadHistory2(displayInPanel = false) {
+	try {
+		const response = await fetch(`/api/solution2/history/${state.threadId2}`);
+		const data = await response.json();
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to load history');
+		}
+
+		if (data.success) {
+			if (displayInPanel) {
+				displayHistory(data, 'solution2');
+			}
+			updateTotalCost(data.summary?.totalUsage?.estimated_cost || 0);
+		}
+	} catch (error) {
+		console.error('❌ Failed to load history:', error);
+		if (displayInPanel) {
+			showError('Failed to load conversation history: ' + error.message);
+		}
+	}
+}
+
+// Clear Solution 2 conversation history
+async function clearHistory2() {
+	if (!confirm('Are you sure you want to clear all conversation history?')) {
+		return;
+	}
+
+	try {
+		const response = await fetch(`/api/solution2/history/${state.threadId2}`, {
+			method: 'DELETE',
+		});
+		const data = await response.json();
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to clear history');
+		}
+
+		if (data.success) {
+			elements.historyContent.innerHTML = '';
+			elements.historyEmpty.classList.remove('hidden');
+			updateTotalCost(0);
+			// Reload history to show empty state
+			if (!elements.historyPanel.classList.contains('hidden')) {
+				await loadHistory2(true);
+			}
+			showMessage('✅ History cleared successfully!');
+		}
+	} catch (error) {
+		console.error('❌ Failed to clear history:', error);
+		showError('Failed to clear history: ' + error.message);
+	}
 }
 
 // Load Solution 1 configuration
@@ -280,23 +388,12 @@ async function loadConfig1() {
 	}
 }
 
-// Load Solution 2 usage statistics
-async function loadUsageStats2() {
-	try {
-		const response = await fetch('/api/solution2/usage');
-		const data = await response.json();
-
-		if (data.success) {
-			elements.freeLLMCount.textContent = `${data.data.free.count} calls`;
-			elements.paidLLMCount.textContent = `${data.data.paid.count} calls`;
-		}
-	} catch (error) {
-		console.error('❌ Failed to load usage stats:', error);
-	}
-}
+// Load Solution 2 usage statistics - Removed (no longer tracking Free/Paid LLM counts)
 
 // Query Solution 1 (OpenAI)
 async function querySolution1(query) {
+	state.lastUsedSolution = 'solution1';
+
 	if (!state.vectorStoreId) {
 		showError('Vector Store not loaded for Solution 1');
 		return;
@@ -390,6 +487,8 @@ async function querySolution1(query) {
 
 // Query Solution 2 (RAG Chain)
 async function querySolution2(query) {
+	state.lastUsedSolution = 'solution2';
+
 	// Show Solution 2 container and result blocks
 	elements.solution2Container.classList.remove('hidden');
 	elements.fileSearchBlock2.classList.remove('hidden');
@@ -417,6 +516,7 @@ async function querySolution2(query) {
 			},
 			body: JSON.stringify({
 				query: query,
+				threadId: state.threadId2,
 			}),
 		});
 
@@ -432,6 +532,19 @@ async function querySolution2(query) {
 			// Display file search + LLM result
 			if (resultData.fileSearchWithLLM) {
 				const fileResult = resultData.fileSearchWithLLM;
+
+				// Extract filename from source path (if it's a full path)
+				const getSourceName = (source) => {
+					if (!source) return 'FK.pdf';
+					// If it's a full path, extract just the filename
+					if (source.includes('\\') || source.includes('/')) {
+						return source.split(/[\\/]/).pop();
+					}
+					return source;
+				};
+
+				const sourceName = getSourceName(fileResult.sourceDocument?.source);
+
 				elements.fileAnswer2.innerHTML = `
 				<div class="prose max-w-none fade-in">
 					<p class="text-gray-800 leading-relaxed text-base mb-4">
@@ -441,13 +554,11 @@ async function querySolution2(query) {
 							? `
 					<details class="mt-2">
 						<summary class="cursor-pointer text-xs text-gray-600 hover:text-gray-800 font-semibold">
-							📊 Source: ${fileResult.sourceDocument.source || 'FK.pdf'} 
-							(from ${fileResult.totalDocuments} documents) - Click to view full text
+							📊 Highest Score Source: ${sourceName} 
+							(from ${fileResult.totalDocuments} retrieved documents) - Click to view full text
 						</summary>
 						<div class="mt-2 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r max-h-96 overflow-y-auto">
-							<p class="text-xs text-gray-700 whitespace-pre-wrap">${
-								fileResult.sourceDocument.content
-							}</p>
+							<p class="text-xs text-gray-700 whitespace-pre-wrap">${fileResult.sourceDocument.content}</p>
 						</div>
 					</details>`
 							: ''
@@ -492,12 +603,6 @@ async function querySolution2(query) {
 				`;
 			}
 
-			// Update usage statistics
-			if (resultData.stats) {
-				elements.freeLLMCount.textContent = `${resultData.stats.freeCount} calls`;
-				elements.paidLLMCount.textContent = `${resultData.stats.paidCount} calls`;
-			}
-
 			// Show token usage if available (LLM)
 			if (resultData.usage) {
 				elements.tokenUsage2.classList.remove('hidden');
@@ -514,20 +619,13 @@ async function querySolution2(query) {
 				)}s`;
 			}
 
-			// Show embedding token usage if available (OpenAI Embeddings)
-			console.log('🔍 Checking embeddingCost:', resultData.embeddingCost);
-			if (resultData.embeddingCost) {
-				console.log('✅ Displaying embedding usage');
-				elements.embeddingUsage2.classList.remove('hidden');
-				elements.embeddingModel2.textContent =
-					resultData.embeddingCost.model || '-';
-				elements.embeddingTokens2.textContent =
-					resultData.embeddingCost.tokens || '-';
-				elements.embeddingCostValue2.textContent =
-					resultData.embeddingCost.cost || '$0.00';
-			} else {
-				console.warn('⚠️ No embeddingCost data received');
+			// Update model display
+			if (resultData.model) {
+				elements.solution2Model.textContent = resultData.model;
 			}
+
+			// Update history and total cost
+			await loadHistory2(false);
 
 			console.log('✅ Solution 2 query successful:', data);
 		}
@@ -684,7 +782,13 @@ elements.queryInput.addEventListener('input', (e) => {
 // History controls event listeners
 elements.showHistoryBtn.addEventListener('click', async () => {
 	elements.historyPanel.classList.remove('hidden');
-	await loadHistory1(true);
+
+	// Load history based on last used solution (default to Solution 1)
+	if (state.lastUsedSolution === 'solution2') {
+		await loadHistory2(true);
+	} else {
+		await loadHistory1(true);
+	}
 });
 
 elements.hideHistoryBtn.addEventListener('click', () => {
@@ -692,7 +796,21 @@ elements.hideHistoryBtn.addEventListener('click', () => {
 });
 
 elements.clearHistoryBtn.addEventListener('click', async () => {
-	await clearHistory1();
+	// Clear history based on currently displayed solution
+	if (state.currentHistorySolution === 'solution2') {
+		await clearHistory2();
+	} else {
+		await clearHistory1();
+	}
+});
+
+// Switch history between solutions
+elements.switchToSolution1History.addEventListener('click', async () => {
+	await loadHistory1(true);
+});
+
+elements.switchToSolution2History.addEventListener('click', async () => {
+	await loadHistory2(true);
 });
 
 // Initialize
@@ -700,13 +818,12 @@ console.log('🚀 Försäkringskassan AI Assistant started');
 console.log('📝 Session IDs:');
 console.log('   Solution 1 (OpenAI):', state.threadId1);
 console.log('   Solution 2 (Langchain):', state.threadId2);
-console.log('💰 Cost optimization:');
-console.log('   Solution 1: gpt-4o-mini (OpenAI cheapest model)');
-console.log('   Solution 2: Gemini 2.0 Flash (Free) with OpenAI fallback');
+console.log('💰 Models:');
+console.log('   Solution 1: gpt-4o-mini (OpenAI)');
+console.log('   Solution 2: gpt-4o-mini (OpenAI) + text-embedding-3-small');
 
 // Load configurations
 loadConfig1();
-loadUsageStats2();
 
-// Refresh usage stats every 10 seconds
-setInterval(loadUsageStats2, 10000);
+// Initialize history UI (default to Solution 1)
+updateHistoryUI('solution1');

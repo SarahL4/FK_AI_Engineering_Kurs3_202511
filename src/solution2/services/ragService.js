@@ -3,6 +3,7 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { TavilySearchResults } from '@langchain/community/tools/tavily_search';
 import { pdfService } from './pdfService.js';
+import { memoryService } from './memoryService.js';
 import { ErrorHandler } from '../utils/errorHandler.js';
 import { OPENAI_MODELS } from '../../shared/config/constants.js';
 
@@ -70,6 +71,7 @@ class RAGService {
 
 	/**
 	 * Perform file search and return raw results (reduced to 2 for speed and accuracy)
+	 * Returns documents sorted by similarity score (highest first)
 	 */
 	async fileSearch(query) {
 		try {
@@ -84,9 +86,17 @@ class RAGService {
 				};
 			}
 
+			// Langchain retriever returns documents sorted by similarity score (descending)
+			// So documents[0] is the highest scoring (most relevant) document
+			const topDocument = result.documents[0];
+
+			console.log(
+				`✅ Retrieved ${result.documents.length} documents (highest score: ${topDocument.source})`
+			);
+
 			return {
 				documents: result.documents,
-				topDocument: result.documents[0], // Highest score
+				topDocument: topDocument, // Highest similarity score document
 				embeddingCost: result.embeddingCost, // Include embedding cost
 			};
 		} catch (error) {
@@ -192,8 +202,11 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 
 	/**
 	 * Main query method - file search with LLM and web search
+	 * @param {string} query - User query
+	 * @param {string} threadId - Thread ID for conversation history (optional)
+	 * @returns {Promise<Object>} Query result
 	 */
-	async query(query) {
+	async query(query, threadId = null) {
 		try {
 			// Start time tracking
 			const startTime = Date.now();
@@ -203,6 +216,9 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 			}
 
 			console.log(`\n📝 Processing query: "${query}"`);
+			if (threadId) {
+				console.log(`   Thread ID: ${threadId}`);
+			}
 
 			// Perform file search and web search in parallel
 			const [fileSearchResults, webSearchResults] = await Promise.all([
@@ -242,10 +258,22 @@ Svara på svenska med exakta siffror och belopp från kontexten. Ge ett komplett
 				responseTime: responseTime, // Add response time in seconds
 			};
 
-			console.log(
-				'🔍 RAG Service returning embeddingCost:',
-				result.embeddingCost
-			);
+			// Save to conversation history if threadId is provided
+			if (threadId) {
+				const webAnswer = webSearchResults.results[0]?.content || '';
+				memoryService.saveResponse(
+					threadId,
+					query,
+					answerResult.answer,
+					webAnswer,
+					answerResult.usage,
+					{
+						model: answerResult.usedModel,
+						responseTime: responseTime,
+					}
+				);
+			}
+
 			return result;
 		} catch (error) {
 			console.error('❌ Query failed:', error);

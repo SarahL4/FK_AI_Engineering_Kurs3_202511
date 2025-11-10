@@ -172,9 +172,25 @@
 				<div
 					class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex justify-between items-center"
 				>
-					<h3 class="text-lg font-semibold text-white">
-						📜 Conversation History (Solution 1)
-					</h3>
+					<div class="flex items-center gap-3">
+						<h3 id="historyTitle" class="text-lg font-semibold text-white">
+							📜 Conversation History
+						</h3>
+						<div class="flex gap-2">
+							<button
+								id="switchToSolution1History"
+								class="text-xs bg-white/20 hover:bg-white/30 text-white font-medium py-1 px-3 rounded transition-all duration-200"
+							>
+								Solution 1
+							</button>
+							<button
+								id="switchToSolution2History"
+								class="text-xs bg-white/20 hover:bg-white/30 text-white font-medium py-1 px-3 rounded transition-all duration-200"
+							>
+								Solution 2
+							</button>
+						</div>
+					</div>
 					<button
 						id="hideHistoryBtn"
 						class="text-white hover:bg-white/20 rounded-full p-1 transition-all duration-200"
@@ -330,7 +346,7 @@
 						class="hidden bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200"
 					>
 						<h4 class="text-sm font-semibold text-purple-900 mb-2">
-							📊 Token Usage & Performance (LLM)
+							📊 Token Usage & Performance
 						</h4>
 						<div class="grid grid-cols-4 gap-2 text-xs">
 							<div class="bg-white rounded p-2">
@@ -366,45 +382,6 @@
 							</div>
 						</div>
 					</div>
-
-					<!-- Token Usage (Embeddings) -->
-					<div
-						id="embeddingUsage2"
-						class="hidden bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-200"
-					>
-						<h4 class="text-sm font-semibold text-orange-900 mb-2">
-							📊 Token Usage (Embeddings)
-						</h4>
-						<div class="grid grid-cols-3 gap-2 text-xs">
-							<div class="bg-white rounded p-2">
-								<p class="text-gray-500">Model</p>
-								<p
-									id="embeddingModel2"
-									class="font-bold text-orange-900 text-[10px]"
-								>
-									-
-								</p>
-							</div>
-							<div class="bg-white rounded p-2">
-								<p class="text-gray-500">Tokens</p>
-								<p
-									id="embeddingTokens2"
-									class="font-bold text-orange-900 font-mono"
-								>
-									-
-								</p>
-							</div>
-							<div class="bg-white rounded p-2">
-								<p class="text-gray-500">Cost</p>
-								<p
-									id="embeddingCostValue2"
-									class="font-bold text-orange-900 font-mono"
-								>
-									-
-								</p>
-							</div>
-						</div>
-					</div>
 				</div>
 			</div>
 
@@ -425,7 +402,13 @@
 								>
 							</div>
 							<div class="flex items-center gap-2">
-								<span>Model:</span>
+								<span>Upload:</span>
+								<span class="font-medium text-blue-600"
+									>OpenAI Vector Store</span
+								>
+							</div>
+							<div class="flex items-center gap-2">
+								<span>LLM:</span>
 								<span class="font-medium text-blue-600">gpt-4o-mini</span>
 							</div>
 						</div>
@@ -436,26 +419,21 @@
 						</h3>
 						<div class="space-y-1 text-gray-600">
 							<div class="flex items-center gap-2">
-								<span>PDF:</span>
+								<span>Vector Store:</span>
 								<span id="pdfStatus2" class="font-medium text-green-600"
-									>Ready</span
+									>✅ Supabase (229 chunks)</span
 								>
 							</div>
 							<div class="flex items-center gap-2">
-								<span>Model:</span>
-								<span id="solution2Model" class="font-medium text-green-600"
-									>gemini-2.0-flash-exp</span
+								<span>Embedding:</span>
+								<span class="font-medium text-purple-600"
+									>text-embedding-3-small</span
 								>
 							</div>
 							<div class="flex items-center gap-2">
-								<span>Free LLM:</span>
-								<span id="freeLLMCount" class="font-medium text-green-600"
-									>1 calls</span
-								>
-								<span class="text-gray-400">|</span>
-								<span>Paid LLM:</span>
-								<span id="paidLLMCount" class="font-medium text-orange-600"
-									>0 calls</span
+								<span>LLM:</span>
+								<span id="solution2Model" class="font-medium text-blue-600"
+									>gpt-4o-mini</span
 								>
 							</div>
 						</div>

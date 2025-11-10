@@ -117,6 +117,8 @@ export class ResponseService {
 					{
 						type: 'file_search',
 						vector_store_ids: [vectorStoreId],
+						// Limit to top 2 results (same as Solution 2)
+						max_num_results: 2,
 					},
 				],
 				store: true, // Store response for conversation context
@@ -128,7 +130,7 @@ export class ResponseService {
 			}
 
 			const response = await this.client.responses.create(requestConfig);
-			Logger.info('File search completed');
+			Logger.info('File search completed (top 2 results)');
 
 			return response;
 		} catch (error) {
